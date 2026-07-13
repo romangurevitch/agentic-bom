@@ -1,5 +1,7 @@
 # Agentic BOM: "BOM for Agentic Engineering" Talk
 
+**Live: [romangurevitch.github.io/agentic-bom](https://romangurevitch.github.io/agentic-bom/)**
+
 A 3D, game-styled conference presentation built in Three.js. An agentic
 software factory assembles itself live across 23 keyboard-driven screens
 (six acts), ending in a full-plant orbit and a "choose your build" depth
@@ -46,9 +48,10 @@ Published as a [GitHub Pages](https://docs.github.com/en/pages) site via the
 branch triggers a deployment automatically, publishing the `talk/` directory
 with `talk/index.html` as the entry point.
 
-The site URL is shown in the workflow run summary and in the repo's
-**Settings → Pages** page. Pages only serves from public repos on the free
-plan, so this needs the repo visibility set to public first.
+Live at <https://romangurevitch.github.io/agentic-bom/>. Pages only serves
+from public repos on the free plan, and needs to be configured with source
+"GitHub Actions" (Settings → Pages) rather than the legacy "deploy from a
+branch" mode for the workflow to publish successfully.
 
 ## Editing
 
