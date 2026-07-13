@@ -102,6 +102,18 @@
     display: none; flex-wrap: wrap; gap: 8px;
     margin-top: 16px;
   }
+
+  #qr {
+    display: none; align-items: center; gap: 18px;
+    margin-top: 18px; padding-top: 16px;
+    border-top: 1px solid var(--line);
+  }
+  #qr img {
+    width: 132px; height: 132px; display: block;
+    background: #fff; border-radius: 10px;
+  }
+  .qr-t { font-size: 15px; color: var(--ink-2); }
+  .qr-u { font-size: 14px; color: var(--accent); margin-top: 6px; letter-spacing: 0.02em; }
   .chip {
     font-family: ui-monospace, Menlo, monospace;
     font-size: 13px; letter-spacing: 0.05em;
@@ -168,6 +180,9 @@
     #kicker { font-size: 16px; }
     #title { font-size: 52px; }
     #bullets { font-size: 22.5px; gap: 8px; }
+    #qr img { width: 160px; height: 160px; }
+    .qr-t { font-size: 17px; }
+    .qr-u { font-size: 16px; }
     .chip { font-size: 15px; padding: 6px 14px; }
     #stepnum { font-size: 20px; }
     #notes { font-size: 17px; }
@@ -188,6 +203,14 @@
     transform: translate(-50%, -50%);
     max-width: 760px;
   }
+
+  /* free roam: the world speaks for itself, only the hint stays up.
+     Keep these rules last so they win over body.shownotes. */
+  #hint-roam { display: none; }
+  body.roam #hint-deck { display: none; }
+  body.roam #hint-roam { display: inline; }
+  body.roam #card, body.roam #act,
+  body.roam #progress, body.roam #notesbar { display: none; }
 </style>
 </head>
 <body>
@@ -195,7 +218,8 @@
 
   <div class="hud" id="act"></div>
   <div class="hud mono" id="hint">
-    <b>&larr; &rarr;</b> step &nbsp; <b>drag</b> rotate &nbsp; <b>shift+drag</b> pan &nbsp; <b>scroll</b> zoom &nbsp; <b>-/+</b> hud &nbsp; <b>N</b> notes &nbsp; <b>O</b> orbit &nbsp; <b>1-6</b> act &nbsp; <b>R</b> reset
+    <span id="hint-deck"><b>&larr; &rarr;</b> step &nbsp; <b>drag</b> rotate &nbsp; <b>wasd</b> move &nbsp; <b>scroll</b> zoom &nbsp; <b>-/+</b> hud &nbsp; <b>N</b> notes &nbsp; <b>O</b> orbit &nbsp; <b>F</b> roam &nbsp; <b>1-6</b> act &nbsp; <b>R</b> reset</span>
+    <span id="hint-roam"><b>wasd</b> move &nbsp; <b>drag</b> rotate &nbsp; <b>shift+drag</b> pan &nbsp; <b>scroll</b> zoom &nbsp; <b>O</b> orbit &nbsp; <b>F</b> exit roam</span>
   </div>
 
   <div class="hud" id="card">
@@ -203,6 +227,13 @@
     <h1 id="title"></h1>
     <ul id="bullets"></ul>
     <div id="chips"></div>
+    <div id="qr">
+      <img src="assets/qr.svg" alt="QR code for this deck" />
+      <div>
+        <div class="qr-t">Scan to open this deck</div>
+        <div class="qr-u mono">romangurevitch.github.io/agentic-bom</div>
+      </div>
+    </div>
   </div>
 
   <div class="hud" id="progress">

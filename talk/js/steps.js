@@ -17,6 +17,7 @@ export const STEPS = [
   {
     act: 1, accent: C.know, kicker: 'Welcome',
     title: 'We are going to build a factory',
+    qr: true,
     bullets: [
       'A Bill of Materials for the agentic SDLC, assembled live',
       'You leave with a parts list to hold your own org against',
@@ -257,7 +258,7 @@ export const STEPS = [
       'See the yellow link. The toolkits next door USE these patterns; skills ground on standards, and both feed the floors above.',
       'Agents use standards by default only if standards exist as artifacts. Tribal knowledge is invisible to an agent.',
     ],
-    cam: { pos: [2, 1, 38], target: [1, -10.5, 12] },
+    cam: { pos: [4, -3.3, 30.4], target: [1, -13.5, 9.1] },
   },
   {
     act: 3, accent: C.int, kicker: 'Integration Layer · MCP',

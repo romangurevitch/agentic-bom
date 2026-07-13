@@ -46,7 +46,9 @@ const UNDER_Y = -12;
 const GROUND_Y = -13.6;
 const LOT_TOP = -12;      // paved lot surface the whole plant stands on
 const ROOM_Z = -4.2;      // station rooms sit behind the belt line (belt at z 0)
-const CELL_Z = -9;
+// cells sit far enough north that their platforms (7 deep) never touch the
+// station-room bases (room row back edge at z -6.8; platform front at -7.0)
+const CELL_Z = -10.5;
 const CELL_X = { IDE: -16, Portal: 0, Auto: 16 };
 // the top level: Head Office + Workflow Foundry share a deck raised over
 // the back of the plant, directly above the intake wall
@@ -798,9 +800,11 @@ export function buildWorld(scene) {
     return sprite;
   }
   world.currentScreen = 1;
+  world.roam = false; // free roam hides every floating sprite; fixed plates carry the names
   world.updateLabels = screen => {
     world.currentScreen = screen;
     for (const L of labels) {
+      if (world.roam) { L.sprite.visible = false; continue; }
       let vis = L.focus.includes(screen);
       if (!vis && L.band) {
         if (screen === 21) vis = true;
@@ -1095,11 +1099,8 @@ export function buildWorld(scene) {
   floorMesh.position.set(0, 0, -2);
   floorMesh.receiveShadow = true;
   shell.add(floorMesh);
-  const slab = new THREE.Mesh(new THREE.PlaneGeometry(62, 38), mat(0x11151b, { rough: 0.9, metal: 0.05 }));
-  slab.rotation.x = -Math.PI / 2;
-  slab.position.set(0, UNDER_Y, -2);
-  slab.receiveShadow = true;
-  shell.add(slab);
+  // no separate basement floor plane: it sat exactly on the paved lot's top
+  // surface and the two z-fought (flicker); the pavement IS the slab
 
   // ---- the top-level deck (raised over the back of the plant, above the
   // intake wall; the head office and foundry stand on it) ----
@@ -1230,9 +1231,20 @@ export function buildWorld(scene) {
     edge.castShadow = false;
     foundryG.add(edge);
   }
-  const foundryLabel = lab(makeLabel('the Workflow Foundry · The Meta Workflow', css(COLORS.life), 0.95), [8], { band: true, group: 'foundry' });
+  // the roofline plates carry the name on screen 8; the banner only flies
+  // for the full-plant and profile screens
+  const foundryLabel = lab(makeLabel('the Workflow Foundry · The Meta Workflow', css(COLORS.life), 0.95), [], { band: true, group: 'foundry' });
   foundryLabel.position.set(FX, 9.6, FZ);
   foundryG.add(foundryLabel);
+  // fixed signage stands ABOVE the roofline (a rooftop sign), so the roof
+  // edge and trim never mask it from the show cameras or free roam
+  const fPlateS = makePlate('the Workflow Foundry', COLORS.life, 9, 1.5);
+  fPlateS.position.set(FX, 8.7, FZ + 7.6);
+  foundryG.add(fPlateS);
+  const fPlateE = makePlate('the Workflow Foundry', COLORS.life, 9, 1.5);
+  fPlateE.position.set(FX + 13.1, 8.7, FZ);
+  fPlateE.rotation.y = Math.PI / 2;
+  foundryG.add(fPlateE);
 
   // ---- The Meta Workflow (screen 8): three candidate topologies assemble
   // in place on the foundry floor; the chosen one flies to the line ----
@@ -1285,15 +1297,24 @@ export function buildWorld(scene) {
       bl.e.visible = false;
       metaLines.add(bl.m);
       metaLines.add(bl.e);
+      // the chosen workflow flies to the line along a high arc: up out of
+      // the foundry's open side, over the intake wall, funnels, and cells,
+      // then down onto the floor. Never straight through the geometry.
+      const spreadTo = ci === 0 && bi < 7 ? new THREE.Vector3(STATION_X(bi), 1.0, ROOM_Z) : null;
+      const flight = spreadTo ? new THREE.QuadraticBezierCurve3(
+        home.clone(),
+        new THREE.Vector3((home.x + spreadTo.x) / 2, 26, (home.z + spreadTo.z) / 2),
+        spreadTo.clone()
+      ) : null;
       if (isGate) {
         const ring = torus(1.0, 0.06, mat(COLORS.gov, { glow: true, ei: 0.7 }), 0, 0, 0);
         ring.rotation.x = Math.PI / 2;
         ring.position.copy(home);
         ring.visible = false;
         metaLines.add(ring);
-        return { ...bl, home, ring, spread: ci === 0 ? new THREE.Vector3(STATION_X(bi), 1.0, ROOM_Z) : null };
+        return { ...bl, home, ring, spread: spreadTo, flight, ft: 0, goal: 0 };
       }
-      return { ...bl, home, spread: ci === 0 && bi < 7 ? new THREE.Vector3(STATION_X(bi), 1.0, ROOM_Z) : null };
+      return { ...bl, home, spread: spreadTo, flight, ft: 0, goal: 0 };
     });
     const arrows = def.links.map(([a, b]) => {
       const ar = arrowBetween(blocks[a].home, blocks[b].home, 0x9fb2c4);
@@ -1348,7 +1369,7 @@ export function buildWorld(scene) {
         cd.chosen = chosen && ci === 0;
         candOpacity(cd, chosen && ci !== 0 ? 0.18 : 1);
         cd.blocks.forEach(bl => {
-          if (bl.spread) bl.target = cd.chosen ? bl.spread : bl.home;
+          if (bl.flight) bl.goal = cd.chosen ? 1 : 0;
           else bl.target = bl.home;
         });
         if (chosen) cd.arrows.forEach(ar => { if (ci === 0) ar.visible = false; });
@@ -1370,7 +1391,8 @@ export function buildWorld(scene) {
           if (bl.spread) {
             bl.m.position.copy(bl.spread);
             bl.e.position.copy(bl.spread);
-            bl.target = bl.spread;
+            bl.ft = 1;
+            bl.goal = 1;
           }
         });
       });
@@ -1392,7 +1414,16 @@ export function buildWorld(scene) {
             bl.m.scale.setScalar(Math.min(1, bl.m.scale.x + dt * 4));
             bl.e.scale.copy(bl.m.scale);
           }
-          if (bl.target) {
+          if (bl.flight) {
+            if (bl.ft !== bl.goal) {
+              bl.ft = bl.goal > bl.ft
+                ? Math.min(bl.goal, bl.ft + dt / 1.9)
+                : Math.max(bl.goal, bl.ft - dt / 1.9);
+              const fe = bl.ft * bl.ft * (3 - 2 * bl.ft);
+              bl.flight.getPoint(fe, bl.m.position);
+              bl.e.position.copy(bl.m.position);
+            }
+          } else if (bl.target) {
             bl.m.position.lerp(bl.target, k);
             bl.e.position.copy(bl.m.position);
             if (bl.ring) bl.ring.position.copy(bl.m.position);
@@ -1424,14 +1455,12 @@ export function buildWorld(scene) {
     intake.add(rbox(0.5, 0.5, 1.8, mat(COLORS.steelDark, { rough: 0.5, metal: 0.6 }), x, 11.8, -19.2, 0.1));
     intake.add(rbox(3.4, 0.35, 3.4, mat(0x1a212a, { rough: 0.55, metal: 0.35 }), x, 0.18, cz, 0.12));
     intake.add(rbox(3.0, 0.06, 3.0, mat(COLORS.input, { glow: true, ei: 0.18, opacity: 0.5 }), x, 0.39, cz, 0.03));
-    // the funnel wears its own nameplate, leaned back to sit on the cone
-    const plate = makePlate(name, COLORS.input, 2.7, 0.62);
-    plate.position.set(x, 12.0, cz + 1.22);
+    // the funnel wears its own nameplate, leaned back to sit on the cone,
+    // angled at the screen-5 camera; no floating label needed
+    const plate = makePlate(name, COLORS.input, 3.6, 0.82);
+    plate.position.set(x, 12.05, cz + 1.32);
     plate.rotation.x = -0.49;
     intake.add(plate);
-    const label = lab(makeLabel(name, css(COLORS.input), 0.8), [5]);
-    label.position.set(x, 15.1, cz);
-    intake.add(label);
   });
   intake.add(rbox(48, 0.3, 1.6, mat(0x1b222b, { rough: 0.6, metal: 0.4 }), 0, 0.5, -15.2, 0.08));
   intake.add(rbox(48.4, 0.35, 0.26, mat(COLORS.input, { glow: true, ei: 0.2, opacity: 0.85 }), 0, 0.58, -14.4, 0.06));
@@ -1484,11 +1513,13 @@ export function buildWorld(scene) {
   const ideBezel = rbox(3.6, 2.3, 0.14, mat(0x11161c, { rough: 0.4, metal: 0.3 }), CELL_X.IDE, 2.58, CELL_Z - 1.42, 0.05);
   ideBezel.rotation.x = -0.1;
   bayIDE.add(ideBezel);
+  // occupants stay north of the transit lane at CELL_Z + 1.8, so passing
+  // products never clip them
   const ideDev = person(0x4f6c8f, true, 'casual');
-  ideDev.position.set(CELL_X.IDE - 0.6, 0.35, CELL_Z + 0.9);
+  ideDev.position.set(CELL_X.IDE - 0.6, 0.35, CELL_Z + 0.5);
   bayIDE.add(ideDev);
   const ideBot = makeRobot(0.62);
-  ideBot.g.position.set(CELL_X.IDE + 2.6, 0.35, CELL_Z + 0.6);
+  ideBot.g.position.set(CELL_X.IDE + 2.6, 0.35, CELL_Z + 0.4);
   ideBot.g.rotation.y = -0.5;
   bayIDE.add(ideBot.g);
   bays.add(bayIDE);
@@ -1509,7 +1540,7 @@ export function buildWorld(scene) {
   portalBezel.rotation.x = -0.16;
   bayPortal.add(portalBezel);
   const portalUser = person(0x8a6f9e, false, 'suit');
-  portalUser.position.set(CELL_X.Portal - 0.2, 0.35, CELL_Z + 1.2);
+  portalUser.position.set(CELL_X.Portal - 0.2, 0.35, CELL_Z + 0.5);
   bayPortal.add(portalUser);
   bays.add(bayPortal);
   groups.bayPortal = bayPortal;
@@ -1772,12 +1803,14 @@ export function buildWorld(scene) {
     const D = (a, b) => Math.max(0.35, a.distanceTo(b) / SPEED);
     s.push(seg([cx, 1.05, -18.2], 0.9, 'fall', { from: new THREE.Vector3(cx, 10.8, -18.2), ease: 'in' }));
     s.push(seg([cx, 1.05, -18.2], 0.4, 'fall'));
+    // the westbound transit lane to the line start runs at CELL_Z + 1.8,
+    // BEHIND the station rooms: products never cross the room row or the
+    // chosen workflow blocks waiting on the floor
     const pts = [
       [cx, 1.05, -15.2, 'route'],
       [cellX, 1.05, -15.2, 'route'],
-      [cellX, 1.05, CELL_Z + 2.8, 'route', { dwellPart: 1 }],
-      [cellX, 1.05, -5.4, 'route'],
-      [-25.5, 1.05, -5.4, 'route'],
+      [cellX, 1.05, CELL_Z + 1.8, 'route', { dwellPart: 1 }],
+      [-25.5, 1.05, CELL_Z + 1.8, 'route'],
       [-25.5, 1.15, 0, 'line', { station: 0 }],
     ];
     let prev = s[s.length - 1].to;
@@ -1981,10 +2014,11 @@ export function buildWorld(scene) {
   // ---- the connected under-floor network (screen 12) ----
   const basementNet = reg('basementNet', 12);
   const wallMat = () => mat(0x1e242b, { rough: 0.75, metal: 0.1, opacity: 0.94 });
-  for (const [wx, wz, ww, wd] of [[-30.6, -2, 0.5, 36.5], [30.6, -2, 0.5, 36.5], [0, -20.6, 60.5, 0.5], [0, 16.6, 60.5, 0.5]]) {
+  // no south wall: it stood between the show cameras and the pattern shop
+  // placards, so the basement's front face stays open
+  for (const [wx, wz, ww, wd] of [[-30.6, -2, 0.5, 36.5], [30.6, -2, 0.5, 36.5], [0, -20.6, 60.5, 0.5]]) {
     basementNet.add(rbox(ww, 2.3, wd, wallMat(), wx, UNDER_Y + 1.15, wz, 0.06));
   }
-  basementNet.add(rbox(0.4, 2.3, 12, wallMat(), -16, UNDER_Y + 1.15, 10, 0.06));
   basementNet.add(rbox(0.4, 2.3, 10, wallMat(), 16, UNDER_Y + 1.15, -13, 0.06));
   // central spine under the line
   const spineY = -10.6;
@@ -1995,8 +2029,8 @@ export function buildWorld(scene) {
   }
   // trunks: capability (green), patterns (yellow), integration (purple), knowledge (cyan)
   const trunkDefs = [
-    { key: 'cap', color: COLORS.cap, pts: [[-15, spineY, -7.5], [15, spineY, -7.5]], taps: [[-14, UNDER_Y + 4, -7.5], [0, UNDER_Y + 4, -7.5], [14, UNDER_Y + 4, -7.5]], join: [[10, spineY, -7.5], [10, spineY, -2]] },
-    { key: 'std', color: COLORS.std, pts: [[-13, spineY, 12], [13, spineY, 12]], taps: [[-12, UNDER_Y + 2.4, 12], [-4, UNDER_Y + 2.4, 12], [4, UNDER_Y + 2.4, 12], [12, UNDER_Y + 2.4, 12]], join: [[-8, spineY, 12], [-8, spineY, -2]] },
+    { key: 'cap', color: COLORS.cap, pts: [[-15, spineY, -7.5], [15, spineY, -7.5]], taps: [[-9, UNDER_Y + 4, -7.5], [0, UNDER_Y + 4, -7.5], [9, UNDER_Y + 4, -7.5]], join: [[10, spineY, -7.5], [10, spineY, -2]] },
+    { key: 'std', color: COLORS.std, pts: [[-13, spineY, 12], [13, spineY, 12]], taps: [[-11, UNDER_Y + 2.4, 12], [-6, UNDER_Y + 2.4, 12], [-1, UNDER_Y + 2.4, 12], [4, UNDER_Y + 2.4, 12]], join: null },
     { key: 'int', color: COLORS.int, pts: [[30.4, -9, 0], [25, -9, 0], [23, -10.2, -2]], taps: [], join: null },
     { key: 'know', color: COLORS.know, pts: [[-30.8, -8.8, 0], [-25, -8.8, 0], [-23, -10.2, -2]], taps: [], join: null },
   ];
@@ -2018,11 +2052,13 @@ export function buildWorld(scene) {
     }
     trunkJoints[td.key] = new THREE.Vector3(...td.pts[td.pts.length - 1]);
   }
-  // risers: the spine's vertical outlets, one per station room
+  // risers: the spine's vertical outlets. Only the outer four stand: the
+  // middle three rose straight in front of the toolkit racks on slide 13.
+  // Solid and slightly thicker, so they read as columns, not smoke.
   const riserDots = [];
-  for (let i = 0; i < 7; i++) {
+  for (const i of [0, 1, 5, 6]) {
     const rx = STATION_X(i);
-    basementNet.add(cyl(0.2, 0.2, 10.6, mat(COLORS.steelLight, { rough: 0.4, metal: 0.6, opacity: 0.6 }), rx, spineY / 2 - 0.05, -2.6, 8));
+    basementNet.add(cyl(0.26, 0.26, 10.6, mat(0x5d6b7c, { rough: 0.4, metal: 0.6 }), rx, spineY / 2 - 0.05, -2.6, 8));
     for (let d = 0; d < 2; d++) {
       const dot = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), mat(0x9fd8ff, { glow: true, ei: 1.2 }));
       dot.castShadow = false;
@@ -2039,12 +2075,13 @@ export function buildWorld(scene) {
       }
     },
   });
-  // electric conduits with junction boxes feeding cells and dock
+  // electric conduits with junction boxes feeding cells and dock. The cell
+  // feeds rise outboard of the toolkit racks so slide 13 shows the racks
+  // unobstructed (the old center feed rose straight in front of Playbooks)
   const conduitDefs = [
-    [[-8, spineY, -2], [-8, -1.4, -2], [-16, -1.4, -9], [CELL_X.IDE, -1.2, CELL_Z]],
-    [[0, spineY, -2], [0, -1.4, -5], [0, -1.2, CELL_Z]],
-    [[8, spineY, -2], [8, -1.4, -2], [16, -1.4, -9], [CELL_X.Auto, -1.2, CELL_Z]],
-    [[12, spineY, -2], [12, -1.6, 6], [4, -1.6, 14], [0, -1.4, 15.6]],
+    [[-13, spineY, -2], [-13, -1.4, -2], [-16, -1.4, -9], [CELL_X.IDE, -1.2, CELL_Z]],
+    [[13, spineY, -2], [13, -1.4, -2], [16, -1.4, -9], [CELL_X.Auto, -1.2, CELL_Z]],
+    [[16, spineY, -2], [16, -1.6, 6], [4, -1.6, 14], [0, -1.4, 15.6]],
   ];
   for (const cd of conduitDefs) {
     const wire = tube(elbow(cd, 1.4), 0.07, mat(0xd9c78a, { glow: true, emissive: 0xd9c78a, ei: 0.22, rough: 0.5, metal: 0.5 }), 20);
@@ -2077,13 +2114,16 @@ export function buildWorld(scene) {
   machineRoom.add(mrWire);
   pulsesAlong(machineRoom, mrWire.userData.curve, COLORS.agent, 1, 0.2, 0.11);
   flangesAlong(machineRoom, mrWire.userData.curve, 0.12, 2);
-  const mrLabel = lab(makeLabel('agent runtime', css(COLORS.agent), 0.75), []);
-  mrLabel.position.set(22, UNDER_Y + 5.2, 9);
-  machineRoom.add(mrLabel);
+  // nameplate leaning on top of the server rack row
+  const mrPlate = makePlate('Agent runtime', COLORS.agent, 3.4, 0.72);
+  mrPlate.position.set(24.9, UNDER_Y + 3.05, 9.0);
+  mrPlate.rotation.x = -0.5;
+  machineRoom.add(mrPlate);
 
   // ---- toolkits (screen 13), tapped into the network ----
   const toolkits = reg('toolkits', 13);
-  [-14, 0, 14].forEach(x => {
+  const tkNames = ['Skills', 'Playbooks', 'Agent instructions'];
+  [-9, 0, 9].forEach((x, ti) => {
     const g = new THREE.Group();
     g.add(rbox(4.8, 3.8, 0.7, mat(COLORS.steelDark, { rough: 0.5, metal: 0.5 }), 0, 1.9, 0, 0.12));
     for (let i = 0; i < 6; i++) {
@@ -2091,16 +2131,16 @@ export function buildWorld(scene) {
       g.add(rbox(0.7, 0.12, 0.1, mat(COLORS.cap, { glow: true, ei: 0.7 }), -1.5 + (i % 3) * 1.5, 1.05 + Math.floor(i / 3) * 1.5, 0.68, 0.03));
     }
     g.add(rbox(5.0, 0.3, 1.0, mat(COLORS.cap, { glow: true, ei: 0.3, opacity: 0.9 }), 0, 3.95, 0, 0.08));
+    // the rack wears its own name above the drawer rows
+    const plate = makePlate(tkNames[ti], COLORS.cap, 4.2, 0.8);
+    plate.position.set(0, 3.4, 0.45);
+    g.add(plate);
     g.position.set(x, UNDER_Y, -7.5);
     toolkits.add(g);
   });
-  const tkNames = ['Skills', 'Playbooks', 'Agent instructions'];
-  tkNames.forEach((n, i) => {
-    const lbl = lab(makeLabel(n, css(COLORS.cap), 0.75), [13]);
-    lbl.position.set(-14 + i * 14, UNDER_Y + 5.0, -7.5);
-    toolkits.add(lbl);
-  });
-  const tkLabel = lab(makeLabel('Capability Layer', css(COLORS.cap), 1.0), [13], { band: true, group: 'toolkits' });
+  // the rack plates name each toolkit on screen 13; the zone banner only
+  // flies for the full-plant and profile screens
+  const tkLabel = lab(makeLabel('Capability Layer', css(COLORS.cap), 1.0), [], { band: true, group: 'toolkits' });
   tkLabel.position.set(0, UNDER_Y + 6.8, -7.5);
   toolkits.add(tkLabel);
 
@@ -2113,7 +2153,7 @@ export function buildWorld(scene) {
     ['Evaluation criteria', () => { const o = new THREE.Mesh(new THREE.OctahedronGeometry(0.72), mat(COLORS.std, { glow: true, ei: 0.7, rough: 0.35 })); return shadowed(o); }],
   ];
   patternDefs.forEach(([n, make], i) => {
-    const x = -13 + i * 7;
+    const x = -12 + i * 5;
     const g = new THREE.Group();
     g.add(cyl(0.9, 1.1, 1.6, mat(COLORS.steelDark, { rough: 0.5, metal: 0.5 }), 0, 0.8, 0, 12));
     g.add(cyl(1.05, 1.05, 0.14, mat(COLORS.steelLight, { rough: 0.4, metal: 0.7 }), 0, 1.66, 0, 14));
@@ -2121,9 +2161,12 @@ export function buildWorld(scene) {
     master.position.set(0, 2.5, 0);
     g.add(master);
     animators.push({ update(t) { master.rotation.y = t * 0.5 + i; } });
-    const lbl = lab(makeLabel(n, css(COLORS.std), 0.58), [14]);
-    lbl.position.set(0, 4.4, 0);
-    g.add(lbl);
+    // a museum placard leaning on the pedestal base names the master; large
+    // enough to read from the show camera, so no floating label needed
+    const plate = makePlate(n, COLORS.std, 4.2, 0.95);
+    plate.position.set(0, 0.62, 1.12);
+    plate.rotation.x = -0.2;
+    g.add(plate);
     g.position.set(x, UNDER_Y, 12);
     patternShop.add(g);
   });
@@ -2134,6 +2177,9 @@ export function buildWorld(scene) {
     press.add(rbox(0.35, 3.4, 0.35, mat(COLORS.steel, { rough: 0.45, metal: 0.65 }), dx, 2.0, 0, 0.06));
   }
   press.add(rbox(3.4, 0.5, 1.2, mat(COLORS.steel, { rough: 0.45, metal: 0.65 }), 0, 3.6, 0, 0.08));
+  const pressPlate = makePlate('the Pattern Shop', COLORS.std, 3.2, 0.7);
+  pressPlate.position.set(0, 3.6, 0.65);
+  press.add(pressPlate);
   const ram = rbox(1.5, 0.9, 1.0, mat(COLORS.steelLight, { rough: 0.4, metal: 0.7 }), 0, 2.4, 0, 0.08);
   press.add(ram);
   const stamped = [];
@@ -2143,6 +2189,8 @@ export function buildWorld(scene) {
     press.add(tile);
     stamped.push({ tile, ph: i / 3 });
   }
+  // east of the tightened pedestal row, clear of the Evaluation criteria
+  // stand
   press.position.set(9.5, UNDER_Y, 12);
   patternShop.add(press);
   animators.push({
@@ -2156,7 +2204,9 @@ export function buildWorld(scene) {
       }
     },
   });
-  const psLabel = lab(makeLabel('the Pattern Shop · Standards & Patterns', css(COLORS.std), 1.0), [14], { band: true, group: 'patternShop' });
+  // the press wears the shop name on screen 14 (the master labels stay
+  // floating: their placards read small from the show camera)
+  const psLabel = lab(makeLabel('the Pattern Shop · Standards & Patterns', css(COLORS.std), 1.0), [], { band: true, group: 'patternShop' });
   psLabel.position.set(0, UNDER_Y + 6.4, 12);
   patternShop.add(psLabel);
 
@@ -2184,6 +2234,10 @@ export function buildWorld(scene) {
   }
   pipes.add(cyl(0.35, 0.35, 0.9, mat(COLORS.steelLight, { rough: 0.4, metal: 0.7 }), HUBX, HUBY + 1.65, 0, 10));
   beacon(pipes, COLORS.int, HUBX, HUBY + 2.4, 0, 2.8);
+  // the layer name rides the hub drum's south end cap
+  const hubPlate = makePlate('Integration Layer · MCP', COLORS.int, 2.6, 0.6);
+  hubPlate.position.set(HUBX, HUBY, 8.09);
+  pipes.add(hubPlate);
   const hubMain = cyl(0.8, 0.8, 4.6, mat(COLORS.int, { rough: 0.3, metal: 0.7, opacity: 0.95 }), 32.3, HUBY, 0, 14);
   hubMain.rotation.z = Math.PI / 2;
   pipes.add(hubMain);
@@ -2236,6 +2290,11 @@ export function buildWorld(scene) {
     const lbl = lab(makeLabel(name, css(COLORS.int), 0.75), [15]);
     lbl.position.set(50, UNDER_Y + 6.0, z);
     g.add(lbl);
+    // rooftop sign on the endpoint cabinet, leaned back like a billboard
+    const cabPlate = makePlate(name, COLORS.int, 3.0, 0.66);
+    cabPlate.position.set(58, UNDER_Y + 4.5, z + 0.55);
+    cabPlate.rotation.x = -0.15;
+    g.add(cabPlate);
     pipes.add(g);
     groups[key2] = g;
   }
@@ -2253,6 +2312,10 @@ export function buildWorld(scene) {
   const whPadEdge = edges(34, 0.7, 14, COLORS.know, 0.3);
   whPadEdge.position.set(-60, GROUND_Y + 0.35, 0);
   warehouse.add(whPadEdge);
+  // the layer name runs along the slab's south face like a curb sign
+  const whCurb = makePlate('Knowledge Layer', COLORS.know, 10, 0.62);
+  whCurb.position.set(-60, GROUND_Y + 0.35, 7.03);
+  warehouse.add(whCurb);
   const shelfNames = ['Code & architecture', 'Internal knowledge', 'Process & standards', 'External docs'];
   const WH_Y = GROUND_Y + 0.7 + 1.7; // shelf base rests on the slab top
   shelfNames.forEach((n, s) => {
@@ -2271,9 +2334,10 @@ export function buildWorld(scene) {
       }
     }
     beacon(g, COLORS.know, 0, 6.1, 0, 1.6);
-    const lbl = lab(makeLabel(n, css(COLORS.know), 0.72), [16]);
-    lbl.position.set(0, 7.0, 0);
-    g.add(lbl);
+    // aisle sign across the top of the front frame posts names the shelf
+    const plate = makePlate(n, COLORS.know, 4.4, 0.9);
+    plate.position.set(0, 5.3, 2.6);
+    g.add(plate);
     g.position.set(x, WH_Y, 0);
     warehouse.add(g);
   });
@@ -2297,20 +2361,21 @@ export function buildWorld(scene) {
   warehouse.add(whLabel);
 
   // ---- cross-links between the layers (born as each layer is described) ----
+  // the patterns link: one yellow main tees off the shop's trunk and plugs
+  // straight into the capability trunk, both ends direct, at trunk height.
+  // It arrives WITH the pattern shop on slide 14, not before.
   const linkPatterns = reg('linkPatterns', 14);
-  // cross-links run as straight racked pipes at floor level: axis-aligned
-  // legs with short elbows, not sweeping arcs
-  const lp = tube([[-10, spineY + 0.6, 12], [-10, spineY + 0.6, -7.5]], 0.13, mat(COLORS.std, { glow: true, ei: 0.3, opacity: 0.95 }), 16);
+  const lp = tube([[-4, spineY, 12], [-4, spineY, -7.4]], 0.16, mat(COLORS.std, { glow: true, ei: 0.3, opacity: 0.95 }), 16);
   linkPatterns.add(lp);
   pulsesAlong(linkPatterns, lp.userData.curve, COLORS.std, 2, 0.2, 0.11);
-  flangesAlong(linkPatterns, lp.userData.curve, 0.13, 3);
+  flangesAlong(linkPatterns, lp.userData.curve, 0.16, 3);
   const linkPipesCap = reg('linkPipesCap', 15);
-  const lpc = tube(elbow([[23, spineY + 0.6, -2], [17.5, spineY + 0.6, -2], [17.5, spineY + 0.6, -7.5], [12, spineY + 0.6, -7.5]]), 0.13, mat(COLORS.int, { glow: true, ei: 0.3, opacity: 0.95 }), 20);
+  const lpc = tube(elbow([[23, spineY + 0.6, -2], [17.5, spineY + 0.6, -2], [17.5, spineY + 0.6, -7.5], [13, spineY + 0.6, -7.5], [12, spineY - 0.15, -7.5]]), 0.13, mat(COLORS.int, { glow: true, ei: 0.3, opacity: 0.95 }), 20);
   linkPipesCap.add(lpc);
   pulsesAlong(linkPipesCap, lpc.userData.curve, COLORS.int, 1, 0.2, 0.11);
   flangesAlong(linkPipesCap, lpc.userData.curve, 0.13, 2);
   const linkKnow = reg('linkKnow', 16);
-  const lk1 = tube(elbow([[-23, spineY + 0.6, -2], [-17.5, spineY + 0.6, -2], [-17.5, spineY + 0.6, -7.5], [-12, spineY + 0.6, -7.5]]), 0.13, mat(COLORS.know, { glow: true, ei: 0.3, opacity: 0.95 }), 20);
+  const lk1 = tube(elbow([[-23, spineY + 0.6, -2], [-17.5, spineY + 0.6, -2], [-17.5, spineY + 0.6, -7.5], [-13, spineY + 0.6, -7.5], [-12, spineY - 0.15, -7.5]]), 0.13, mat(COLORS.know, { glow: true, ei: 0.3, opacity: 0.95 }), 20);
   linkKnow.add(lk1);
   pulsesAlong(linkKnow, lk1.userData.curve, COLORS.know, 1, 0.2, 0.11);
   flangesAlong(linkKnow, lk1.userData.curve, 0.13, 2);
@@ -2508,7 +2573,7 @@ export function buildWorld(scene) {
   linkMarket.add(supply);
   pulsesAlong(linkMarket, supply.userData.curve, COLORS.dist, 3, 0.1, 0.15);
   flangesAlong(linkMarket, supply.userData.curve, 0.22, 5);
-  for (const [cx3, cz3] of [[6, -7.5], [-8, 12], [23, -2], [-23, -2]]) {
+  for (const [cx3, cz3] of [[6, -7.5], [-4, 12], [23, -2], [-23, -2]]) {
     const collar = torus(0.42, 0.09, mat(COLORS.dist, { glow: true, ei: 0.6 }), cx3, spineY + 0.4, cz3);
     collar.rotation.x = Math.PI / 2;
     collar.castShadow = false;
@@ -2555,14 +2620,21 @@ export function buildWorld(scene) {
 
   // ---- measurement sensors (screen 20) ----
   const measurement = reg('measurement', 20);
+  // the board is long enough to wear the full metric list at plate size:
+  // one bar per metric, the nameplate running underneath them
   const dash = new THREE.Group();
-  dash.add(cyl(0.28, 0.4, 5, mat(COLORS.steelDark, { rough: 0.5, metal: 0.6 }), 0, 2.5, 0, 10));
-  dash.add(rbox(5.6, 3.4, 0.5, mat(0x131920, { rough: 0.3, metal: 0.4 }), 0, 6.4, 0, 0.15));
-  [1.1, 1.9, 1.4, 2.4].forEach((bh, i) => {
-    const bar = rbox(0.7, bh, 0.14, mat(COLORS.meas, { glow: true, ei: 0.8 }), -1.7 + i * 1.15, 5.1 + bh / 2, 0.32, 0.05);
+  for (const px of [-3, 3]) {
+    dash.add(cyl(0.28, 0.4, 5, mat(COLORS.steelDark, { rough: 0.5, metal: 0.6 }), px, 2.5, 0, 10));
+  }
+  dash.add(rbox(9.4, 3.4, 0.5, mat(0x131920, { rough: 0.3, metal: 0.4 }), 0, 6.4, 0, 0.15));
+  [1.0, 1.7, 1.3, 2.1].forEach((bh, i) => {
+    const bar = rbox(0.9, bh, 0.14, mat(COLORS.meas, { glow: true, ei: 0.8 }), -3.15 + i * 2.1, 5.75 + bh / 2, 0.32, 0.05);
     bar.castShadow = false;
     dash.add(bar);
   });
+  const dashPlate = makePlate('adoption · impact · outcomes · demand', COLORS.meas, 8.6, 0.95);
+  dashPlate.position.set(0, 5.15, 0.28);
+  dash.add(dashPlate);
   const dashLbl = lab(makeLabel('adoption · impact · outcomes · demand', css(COLORS.meas), 0.8), [20]);
   dashLbl.position.set(0, 9.4, 0);
   dash.add(dashLbl);
@@ -2610,11 +2682,12 @@ export function buildWorld(scene) {
 
   // ---- dock + product ----
   const dock = reg('dock', 5);
-  dock.add(rbox(9, 5.8, 1.5, mat(0x1d242d, { rough: 0.55, metal: 0.4 }), 0, 2.9, 15.6, 0.25));
-  dock.add(rbox(10, 0.5, 4.5, mat(COLORS.steel, { rough: 0.5, metal: 0.55 }), 0, 5.9, 17.5, 0.15));
-  for (const cx of [-4.4, 4.4]) {
-    dock.add(cyl(0.22, 0.28, 5.4, mat(COLORS.steelDark, { rough: 0.5, metal: 0.65 }), cx, 3.0, 19.5, 10));
+  // no roof, no solid gate: an open window frames the belt so products
+  // visibly ride through, and the nameplate is the header sign
+  for (const gx of [-3.1, 3.1]) {
+    dock.add(rbox(2.8, 5.8, 1.5, mat(0x1d242d, { rough: 0.55, metal: 0.4 }), gx, 2.9, 15.6, 0.25));
   }
+  dock.add(rbox(3.6, 1.4, 1.5, mat(0x1d242d, { rough: 0.55, metal: 0.4 }), 0, 5.1, 15.6, 0.25));
   dock.add(rbox(5, 0.4, 12, mat(0x1b222b, { rough: 0.6, metal: 0.4 }), 0, 0.5, 21, 0.1));
   for (let gl = 0; gl < 5; gl++) {
     const dot = rbox(0.3, 0.08, 0.3, mat(COLORS.outcome, { glow: true, ei: 1.0 }), -1.9, 0.74, 16.5 + gl * 2.2, 0.02);
@@ -2624,8 +2697,12 @@ export function buildWorld(scene) {
     dot2.position.x = 1.9;
     dock.add(dot2);
   }
-  beacon(dock, COLORS.outcome, 0, 6.4, 17.5, 2.4);
-  const dockLabel = lab(makeLabel('Outcome dock', css(COLORS.outcome), 0.95), [5, 23], { band: true, group: 'dock' });
+  beacon(dock, COLORS.outcome, 0, 6.2, 15.6, 2.4);
+  // the window wears its name on the header
+  const dockPlate = makePlate('Outcome dock', COLORS.outcome, 5, 1.0);
+  dockPlate.position.set(0, 5.1, 16.4);
+  dock.add(dockPlate);
+  const dockLabel = lab(makeLabel('Outcome dock', css(COLORS.outcome), 0.95), [], { band: true, group: 'dock' });
   dockLabel.position.set(0, 7.6, 15.6);
   dock.add(dockLabel);
 

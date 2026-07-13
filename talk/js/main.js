@@ -189,12 +189,48 @@ function prev() {
 }
 
 function goto(step, sub = 0) {
+  if (freeRoam) setRoam(false);
   stepIndex = Math.max(0, Math.min(STEPS.length - 1, step - 1));
   subIndex = Math.max(0, Math.min((STEPS[stepIndex].substeps || 1) - 1, sub));
   orbitManual = false;
   applyStep(true);
 }
 window.__goto = goto;
+
+// ---------- free roam ----------
+// The whole plant lit and running, deck chrome and floating labels hidden;
+// only the fixed in-world signage remains. Toggled with F, shareable as #roam.
+
+let freeRoam = false;
+const FULL_PLANT = 21; // the "full plant" screen: every finished group alive
+const ROAM_CAM = { pos: [58, 46, 48], target: [2, 2, -14] };
+
+function setRoam(on) {
+  if (!world || freeRoam === on) return;
+  freeRoam = on;
+  world.roam = on;
+  document.body.classList.toggle('roam', on);
+  orbitManual = false;
+  if (on) {
+    world.applyProfile(null);
+    world.setInfraFocus(null);
+    world.setStationCount(7);
+    for (const g of Object.values(world.groups)) {
+      if (g.userData.bornAt === undefined) continue;
+      g.visible = FULL_PLANT >= g.userData.bornAt && FULL_PLANT < g.userData.dieAt;
+      prevVisible.set(g.userData.name, g.visible);
+    }
+    // sets currentScreen so the product journeys run end to end; the roam
+    // flag makes this pass hide every floating sprite
+    world.updateLabels(FULL_PLANT);
+    orbitActive = false;
+    flyTo(ROAM_CAM);
+    currentCam = ROAM_CAM;
+    location.hash = 'roam';
+  } else {
+    applyStep(true);
+  }
+}
 
 // ---------- HUD ----------
 
@@ -206,6 +242,7 @@ function updateHud(step) {
   $('kicker').textContent = step.kicker;
   $('title').textContent = step.title;
   $('bullets').innerHTML = step.bullets.map(b => `<li>${b}</li>`).join('');
+  $('qr').style.display = step.qr ? 'flex' : 'none';
   $('stepnum').textContent = `${String(screenNo()).padStart(2, '0')} / ${STEPS.length}`;
 
   const dots = STEPS.map((s, i) =>
@@ -237,6 +274,15 @@ function applyHudScale() {
 applyHudScale();
 
 window.addEventListener('keydown', e => {
+  if (e.key === 'f' || e.key === 'F') { setRoam(!freeRoam); return; }
+  if (freeRoam) {
+    // any deck navigation drops back into the talk at the step you left
+    if (e.key === 'Escape' || e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown'
+      || e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'r' || e.key === 'R'
+      || (e.key >= '1' && e.key <= '6')) { e.preventDefault(); setRoam(false); }
+    else if (e.key === 'o' || e.key === 'O') { orbitManual = !orbitManual; orbitActive = orbitManual; }
+    return;
+  }
   if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); next(); }
   else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
   else if (e.key === '-' || e.key === '_') { hudScale -= 0.08; applyHudScale(); }
@@ -250,6 +296,18 @@ window.addEventListener('keydown', e => {
     if (first >= 0) goto(first + 1);
   }
 });
+// WASD trucks the camera over the plant: forward/back along the view
+// direction (kept horizontal), strafe left/right. Works everywhere, but
+// it is the free-roam walk. Tracked as a set so held keys glide per-frame.
+const moveKeys = new Set();
+window.addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === 'w' || k === 'a' || k === 's' || k === 'd') moveKeys.add(k);
+});
+window.addEventListener('keyup', e => moveKeys.delete(e.key.toLowerCase()));
+window.addEventListener('blur', () => moveKeys.clear());
+
 // mouse: drag rotates the scene around the current shot's target, wheel
 // zooms, shift+drag pans the camera sideways/up-down (truck/pedestal)
 let dragging = false;
@@ -296,6 +354,10 @@ const clock = renderer ? new THREE.Clock() : null;
 const camOffset = new THREE.Vector3();
 const camSpherical = new THREE.Spherical();
 const lookTarget = new THREE.Vector3();
+const moveFwd = new THREE.Vector3();
+const moveRight = new THREE.Vector3();
+const moveDir = new THREE.Vector3();
+const WORLD_UP = new THREE.Vector3(0, 1, 0);
 
 function frame() {
   requestAnimationFrame(frame);
@@ -318,6 +380,22 @@ function frame() {
   camSpherical.theta += userTheta;
   camSpherical.phi = THREE.MathUtils.clamp(camSpherical.phi + userPhi, 0.08, Math.PI - 0.08);
   camSpherical.radius = Math.max(4, camSpherical.radius * userZoom);
+  // WASD glide: speed scales with distance so it feels right at any zoom
+  if (moveKeys.size) {
+    moveFwd.setFromSpherical(camSpherical).negate();
+    moveFwd.y = 0;
+    if (moveFwd.lengthSq() < 1e-6) moveFwd.set(0, 0, -1);
+    moveFwd.normalize();
+    moveRight.crossVectors(moveFwd, WORLD_UP).normalize();
+    moveDir.set(0, 0, 0);
+    if (moveKeys.has('w')) moveDir.add(moveFwd);
+    if (moveKeys.has('s')) moveDir.sub(moveFwd);
+    if (moveKeys.has('a')) moveDir.sub(moveRight);
+    if (moveKeys.has('d')) moveDir.add(moveRight);
+    if (moveDir.lengthSq() > 0) {
+      userPan.addScaledVector(moveDir.normalize(), camSpherical.radius * 0.4 * dt);
+    }
+  }
   lookTarget.copy(camTarget).add(userPan);
   camera.position.setFromSpherical(camSpherical).add(lookTarget);
   camera.lookAt(lookTarget);
@@ -342,6 +420,7 @@ function frame() {
   // labels are drawn to canvas at build time, so the font must be ready first
   try { await document.fonts.load('700 52px "Space Grotesk"'); } catch { /* system fallback */ }
   if (renderer) world = buildWorld(scene);
+  const wantRoam = /roam/.test(location.hash); // applyStep rewrites the hash
   const m = location.hash.match(/s=(\d+)(?:\.(\d+))?/);
   const s = m ? Number(m[1]) : 1;
   const sub = m ? Number(m[2] || 0) : 0;
@@ -351,5 +430,6 @@ function frame() {
   camPos.set(...cam.pos);
   camTarget.set(...cam.target);
   applyStep(false);
+  if (wantRoam) setRoam(true);
   if (renderer) frame();
 })();
