@@ -4,6 +4,12 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>BOM for Agentic Engineering</title>
+<script>
+  // apply the saved theme before first paint so there is no dark flash
+  try {
+    if (localStorage.getItem('theme') === 'light') document.documentElement.classList.add('light');
+  } catch { /* storage unavailable: stay dark */ }
+</script>
 <style>
   @font-face {
     font-family: 'Space Grotesk';
@@ -26,6 +32,25 @@
     --ink-3: #6b7681;
     --line: #232a33;
     --accent: #22d3ee;
+    /* accent used as text/marker ink; light theme darkens it for contrast */
+    --accent-ink: var(--accent);
+    --chip-bg: rgba(255, 255, 255, 0.02);
+    --card-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    --notes-bg: rgba(10, 13, 17, 0.92);
+    --notes-line: #3a4550;
+  }
+  :root.light {
+    --bg: #e9edf2;
+    --panel: rgba(255, 255, 255, 0.9);
+    --ink: #16202a;
+    --ink-2: #46525f;
+    --ink-3: #6d7986;
+    --line: #cbd3dc;
+    --accent-ink: color-mix(in srgb, var(--accent) 62%, #16202a);
+    --chip-bg: rgba(11, 13, 16, 0.03);
+    --card-shadow: 0 20px 60px rgba(15, 23, 32, 0.2);
+    --notes-bg: rgba(255, 255, 255, 0.94);
+    --notes-line: #aeb9c4;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -79,12 +104,12 @@
     background: var(--panel);
     backdrop-filter: blur(6px);
     pointer-events: auto;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    box-shadow: var(--card-shadow);
   }
   #kicker {
     font-family: ui-monospace, Menlo, monospace;
     font-size: 14px; letter-spacing: 0.16em; text-transform: uppercase;
-    color: var(--accent);
+    color: var(--accent-ink);
   }
   #title {
     margin: 6px 0 10px;
@@ -96,7 +121,7 @@
     font-size: 18.5px; line-height: 1.5; color: var(--ink-2);
     display: grid; gap: 6px;
   }
-  #bullets li::marker { color: var(--accent); }
+  #bullets li::marker { color: var(--accent-ink); }
 
   #chips {
     display: none; flex-wrap: wrap; gap: 8px;
@@ -113,7 +138,7 @@
     background: #fff; border-radius: 10px;
   }
   .qr-t { font-size: 15px; color: var(--ink-2); }
-  .qr-u { font-size: 14px; color: var(--accent); margin-top: 6px; letter-spacing: 0.02em; }
+  .qr-u { font-size: 14px; color: var(--accent-ink); margin-top: 6px; letter-spacing: 0.02em; }
   .chip {
     font-family: ui-monospace, Menlo, monospace;
     font-size: 13px; letter-spacing: 0.05em;
@@ -121,7 +146,7 @@
     border: 1px solid var(--line);
     border-radius: 999px;
     color: var(--ink-3);
-    background: rgba(255,255,255,0.02);
+    background: var(--chip-bg);
     transition: all 160ms ease;
   }
   .chip.on { color: var(--ink); border-color: var(--accent); }
@@ -152,9 +177,9 @@
     min-width: 380px;
     max-height: 34vh; overflow: auto;
     padding: 14px 20px;
-    border: 1px dashed #3a4550;
+    border: 1px dashed var(--notes-line);
     border-radius: 16px;
-    background: rgba(10, 13, 17, 0.92);
+    background: var(--notes-bg);
     display: none;
     pointer-events: auto;
   }
@@ -218,8 +243,8 @@
 
   <div class="hud" id="act"></div>
   <div class="hud mono" id="hint">
-    <span id="hint-deck"><b>&larr; &rarr;</b> step &nbsp; <b>drag</b> rotate &nbsp; <b>wasd</b> move &nbsp; <b>scroll</b> zoom &nbsp; <b>-/+</b> hud &nbsp; <b>N</b> notes &nbsp; <b>O</b> orbit &nbsp; <b>F</b> roam &nbsp; <b>1-6</b> act &nbsp; <b>R</b> reset</span>
-    <span id="hint-roam"><b>wasd</b> move &nbsp; <b>drag</b> rotate &nbsp; <b>shift+drag</b> pan &nbsp; <b>scroll</b> zoom &nbsp; <b>O</b> orbit &nbsp; <b>F</b> exit roam</span>
+    <span id="hint-deck"><b>&larr; &rarr;</b> step &nbsp; <b>drag</b> rotate &nbsp; <b>wasd</b> move &nbsp; <b>scroll</b> zoom &nbsp; <b>-/+</b> hud &nbsp; <b>N</b> notes &nbsp; <b>O</b> orbit &nbsp; <b>F</b> roam &nbsp; <b>T</b> theme &nbsp; <b>1-6</b> act &nbsp; <b>R</b> reset</span>
+    <span id="hint-roam"><b>wasd</b> move &nbsp; <b>drag</b> rotate &nbsp; <b>shift+drag</b> pan &nbsp; <b>scroll</b> zoom &nbsp; <b>O</b> orbit &nbsp; <b>T</b> theme &nbsp; <b>F</b> exit roam</span>
   </div>
 
   <div class="hud" id="card">

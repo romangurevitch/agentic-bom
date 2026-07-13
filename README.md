@@ -39,8 +39,8 @@ python3 -m http.server 8000
 Controls: arrows or space to step, mouse drag to rotate, `WASD` to move,
 scroll to zoom, `N` speaker notes, `O` auto-orbit, `F` free roam (the full
 plant lit and running, fixed signage only, also reachable at `#roam`),
-`1-6` jump to act, `R` reset. The URL hash tracks the current step, so a
-refresh restores position. Fully offline: Three.js and the Space Grotesk
+`T` light/dark theme (persisted), `1-6` jump to act, `R` reset. The URL
+hash tracks the current step, so a refresh restores position. Fully offline: Three.js and the Space Grotesk
 font are vendored, no CDN.
 
 ## Deployment

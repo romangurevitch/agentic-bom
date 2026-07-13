@@ -66,22 +66,43 @@ export const LABEL_LAYER = 2;
 // ---------- material / geometry helpers ----------
 
 function mat(color, opts = {}) {
+  const opacity = opts.opacity !== undefined ? opts.opacity : 1;
   const m = new THREE.MeshStandardMaterial({
     color,
     emissive: opts.glow ? (opts.emissive !== undefined ? opts.emissive : color) : 0x000000,
     emissiveIntensity: opts.glow ? (opts.ei !== undefined ? opts.ei : 0.5) : 0,
     roughness: opts.rough !== undefined ? opts.rough : 0.45,
     metalness: opts.metal !== undefined ? opts.metal : 0.35,
-    transparent: true,
-    opacity: opts.opacity !== undefined ? opts.opacity : 1,
+    // fully-opaque surfaces live in the opaque pass: keeping the whole
+    // plant in the transparent pass made the per-frame distance sort
+    // reshuffle big overlapping boxes during camera flights (visible
+    // tearing mid-transition). setFade moves a material across passes
+    // whenever an animation or factor dims it.
+    transparent: opacity < 1,
+    opacity,
     // glass panes must not write depth or they occlude their own interiors
     depthWrite: opts.depthWrite !== undefined ? opts.depthWrite : true,
     envMapIntensity: 0.55,
   });
   m.userData.baseOpacity = m.opacity;
   m.userData.baseEmissive = m.emissiveIntensity;
+  m.userData.canBeOpaque = true;
   return m;
 }
+
+// every runtime opacity change goes through here so the material sits in
+// the right render pass; only mat() materials may leave the transparent
+// pass (holos, labels, lines and dust always blend)
+function setFade(m, v) {
+  m.opacity = v;
+  if (m.userData.canBeOpaque) m.transparent = v < 0.999;
+}
+
+// additive light clamps to white against a bright sky, so the daylight
+// theme swaps these materials to normal blending; holo and edge accents
+// also darken there or their bright colors sink into the sky (setTheme)
+const ADDITIVE_MATS = [];
+const EDGE_MATS = [];
 
 function holoMat(color, opacity = 0.5, additive = true) {
   const m = new THREE.MeshBasicMaterial({
@@ -94,6 +115,7 @@ function holoMat(color, opacity = 0.5, additive = true) {
   });
   m.userData.baseOpacity = opacity;
   m.userData.baseEmissive = 0;
+  if (additive) ADDITIVE_MATS.push(m);
   return m;
 }
 
@@ -139,6 +161,7 @@ function edges(w, h, d, color, opacity = 0.5) {
   const m = new THREE.LineBasicMaterial({ color, transparent: true, opacity });
   m.userData.baseOpacity = opacity;
   m.userData.baseEmissive = 0;
+  EDGE_MATS.push(m);
   return new THREE.LineSegments(geo, m);
 }
 
@@ -325,25 +348,94 @@ function noiseRoughness() {
   return roughTex;
 }
 
-// night-grass albedo: patchy two-tone noise so the terrain separates from the
-// sky on a weak projector
-function grassTexture() {
+// grass albedo: mottled patches plus thousands of leaning blade strokes.
+// Night stays deep and desaturated so the terrain separates from the sky
+// on a weak projector; day is a sunlit lawn with real green variation.
+// Both are cached, and setTheme swaps the map between them.
+let grassTexDay = null;
+let grassTexNight = null;
+function grassTexture(day = false) {
+  const cached = day ? grassTexDay : grassTexNight;
+  if (cached) return cached;
   const c = document.createElement('canvas');
-  c.width = c.height = 256;
+  c.width = c.height = 512;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#16241a';
-  ctx.fillRect(0, 0, 256, 256);
-  for (let i = 0; i < 2600; i++) {
-    const t = Math.random();
-    ctx.fillStyle = t > 0.66 ? '#1d2f20' : (t > 0.33 ? '#142117' : '#1a2a1d');
-    const s = 2 + Math.random() * 7;
-    ctx.fillRect(Math.random() * 256, Math.random() * 256, s, s * (0.5 + Math.random()));
+  ctx.fillStyle = day ? '#48822f' : '#16241a';
+  ctx.fillRect(0, 0, 512, 512);
+  // everything draws wrapped across the canvas border, or the repeat
+  // shows up as a checkerboard of clipped patches over the whole lawn
+  const wrapped = (x, y, r, draw) => {
+    for (const dx of [-512, 0, 512]) {
+      for (const dy of [-512, 0, 512]) {
+        const px = x + dx;
+        const py = y + dy;
+        if (px + r < 0 || px - r > 512 || py + r < 0 || py - r > 512) continue;
+        draw(px, py);
+      }
+    }
+  };
+  // soft mottled patches: worn/lush variation, kept low-contrast so the
+  // tiling never reads as a grid
+  for (let i = 0; i < 52; i++) {
+    const x = Math.random() * 512;
+    const y = Math.random() * 512;
+    const r = 36 + Math.random() * 90;
+    const h = day ? 86 + Math.random() * 38 : 118 + Math.random() * 30;
+    const s = day ? 42 + Math.random() * 26 : 22 + Math.random() * 16;
+    const l = day ? 25 + Math.random() * 15 : 7 + Math.random() * 8;
+    wrapped(x, y, r, (px, py) => {
+      const g = ctx.createRadialGradient(px, py, 0, px, py, r);
+      g.addColorStop(0, `hsla(${h}, ${s}%, ${l}%, 0.28)`);
+      g.addColorStop(1, 'hsla(0, 0%, 0%, 0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(px - r, py - r, r * 2, r * 2);
+    });
   }
+  // individual blades: short leaning strokes in a spread of greens
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 4200; i++) {
+    const x = Math.random() * 512;
+    const y = Math.random() * 512;
+    const len = 3 + Math.random() * 7;
+    const lean = (Math.random() - 0.5) * 4;
+    const h = day ? 88 + Math.random() * 34 : 118 + Math.random() * 26;
+    const s = day ? 46 + Math.random() * 26 : 20 + Math.random() * 18;
+    const l = day ? 22 + Math.random() * 24 : 6 + Math.random() * 10;
+    ctx.strokeStyle = `hsl(${h}, ${s}%, ${l}%)`;
+    ctx.lineWidth = 1 + Math.random();
+    ctx.globalAlpha = 0.45 + Math.random() * 0.55;
+    wrapped(x, y, 12, (px, py) => {
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(px + lean, py - len);
+      ctx.stroke();
+    });
+  }
+  // sunlit tips catch the light and sell the day version's vibrancy
+  if (day) {
+    for (let i = 0; i < 800; i++) {
+      const x = Math.random() * 512;
+      const y = Math.random() * 512;
+      const lean = (Math.random() - 0.5) * 3;
+      const len = 2 + Math.random() * 4;
+      ctx.strokeStyle = `hsl(${84 + Math.random() * 26}, ${55 + Math.random() * 18}%, ${46 + Math.random() * 16}%)`;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.3 + Math.random() * 0.3;
+      wrapped(x, y, 8, (px, py) => {
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px + lean, py - len);
+        ctx.stroke();
+      });
+    }
+  }
+  ctx.globalAlpha = 1;
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.repeat.set(10, 8);
   tex.anisotropy = 8;
+  if (day) grassTexDay = tex; else grassTexNight = tex;
   return tex;
 }
 
@@ -821,8 +913,54 @@ export function buildWorld(scene) {
   scene.fog = new THREE.FogExp2(COLORS.bg, 0.0032);
 
   // lights
-  scene.add(new THREE.AmbientLight(0xbfd0e0, 0.22));
-  scene.add(new THREE.HemisphereLight(0x8fb4d8, 0x1a2129, 0.35));
+  const ambient = new THREE.AmbientLight(0xbfd0e0, 0.22);
+  scene.add(ambient);
+  const hemi = new THREE.HemisphereLight(0x8fb4d8, 0x1a2129, 0.35);
+  scene.add(hemi);
+
+  // Night (default) and daylight looks: only the sky, fog and ambient rig
+  // swap; materials keep their palette so the plant reads the same. Bloom
+  // and vignette retune in main.js, HUD chrome in CSS.
+  world.setTheme = light => {
+    world._light = light;
+    const sky = light ? 0xd9e7f7 : COLORS.bg;
+    scene.background.set(sky);
+    scene.fog.color.set(sky);
+    // a clear sunny day: barely-there aerial perspective, not mist
+    scene.fog.density = light ? 0.0005 : 0.0032;
+    ambient.color.set(light ? 0xffffff : 0xbfd0e0);
+    ambient.intensity = light ? 0.5 : 0.22;
+    hemi.color.set(light ? 0xdfeaf5 : 0x8fb4d8);
+    hemi.groundColor.set(light ? 0x97a3b0 : 0x1a2129);
+    hemi.intensity = light ? 0.55 : 0.35;
+    // the sun bears down harder than the night key so forms stay crisp
+    key.color.set(light ? 0xfff2dd : 0xf2e9dc);
+    key.intensity = light ? 2.1 : 1.6;
+    grassMat.map = grassTexture(light);
+    for (const m of ADDITIVE_MATS) {
+      m.blending = light ? THREE.NormalBlending : THREE.AdditiveBlending;
+    }
+    // accent tints write into baseColor (keeping the author color in
+    // origColor) so the factor pass below composes with them cleanly
+    for (const m of [...ADDITIVE_MATS, ...EDGE_MATS]) {
+      if (!m.userData.origColor) m.userData.origColor = m.color.clone();
+      const c = m.userData.origColor.clone();
+      if (light) c.multiplyScalar(0.45);
+      m.userData.baseColor = c;
+      m.color.copy(c);
+    }
+    // thin edge lines live or die by opacity; day boosts them through
+    // baseOpacity so the dim/focus factor passes keep scaling correctly
+    for (const m of EDGE_MATS) {
+      if (m.userData.baseOpacity0 === undefined) m.userData.baseOpacity0 = m.userData.baseOpacity;
+      const nb = light ? Math.min(1, m.userData.baseOpacity0 * 1.6) : m.userData.baseOpacity0;
+      if (m.userData.baseOpacity > 0) m.opacity = m.opacity / m.userData.baseOpacity * nb;
+      m.userData.baseOpacity = nb;
+    }
+    // re-run the factor pass so active ghosts/focus pick up the theme's
+    // dimming style (night fades to black, day greys out; see applyToObj)
+    for (const n of Object.keys(groups)) world._applyFactors(groups[n]);
+  };
   const key = new THREE.DirectionalLight(0xf2e9dc, 1.6);
   key.position.set(42, 70, 30);
   key.castShadow = true;
@@ -865,6 +1003,8 @@ export function buildWorld(scene) {
   world._modes = {};
   world._focus = {};
   world._birth = {};
+  world._ghostK = 0.12;
+  world._light = false; // setTheme keeps this current
   world._modeOf = g => {
     const n = g.userData && g.userData.name;
     return world._modes[n] !== undefined ? world._modes[n] : 1;
@@ -873,33 +1013,53 @@ export function buildWorld(scene) {
     const m = world._modes[name] !== undefined ? world._modes[name] : 1;
     const f = world._focus[name] !== undefined ? world._focus[name] : 1;
     const b = world._birth[name] !== undefined ? world._birth[name] : 1;
-    return { k: m * f * b, hot: world._focus[name] === 1 && Object.keys(world._focus).length > 0 };
+    // dim is the steady ghost/focus product; birth is a transient fade-in
+    // and is kept apart so materializing groups keep writing depth
+    return { k: m * f * b, dim: m * f, hot: world._focus[name] === 1 && Object.keys(world._focus).length > 0 };
   }
-  function applyToObj(obj, k, hot) {
+  // ghost tint for the day theme: dimming by opacity alone works at night
+  // (components read as lights turning off), but under the sun everything
+  // stays lit, so dimmed components desaturate toward clay grey instead;
+  // the shape stays readable as "considered, not built"
+  const GHOST_TINT = new THREE.Color(0x9fabb6);
+  function applyToObj(obj, k, dim, hot) {
     const m = obj.material;
     if (!m || !m.userData || m.userData.baseOpacity === undefined) return;
-    m.opacity = m.userData.baseOpacity * Math.max(k, 0.001);
+    if (world._light && k < 1) {
+      if (!m.userData.baseColor) m.userData.baseColor = m.color.clone();
+      m.color.copy(m.userData.baseColor).lerp(GHOST_TINT, (1 - k) * 0.9);
+      setFade(m, m.userData.baseOpacity * (0.14 + 0.86 * k));
+    } else {
+      if (m.userData.baseColor) m.color.copy(m.userData.baseColor);
+      setFade(m, m.userData.baseOpacity * Math.max(k, 0.001));
+    }
     if (m.emissiveIntensity !== undefined && m.userData.baseEmissive) {
       m.emissiveIntensity = m.userData.baseEmissive * (k >= 1 ? (hot ? 1.35 : 1) : k);
     }
+    // ghosted/x-rayed surfaces must stop writing depth: mis-sorted
+    // translucent boxes otherwise cut holes through the scene that fill
+    // with sky (solid white slabs on the day theme). Births keep writing
+    // depth so materializing buildings fade in solid, not as x-rays.
+    if (m.userData.baseDepthWrite === undefined) m.userData.baseDepthWrite = m.depthWrite;
+    m.depthWrite = dim >= 1 ? m.userData.baseDepthWrite : false;
     if (obj.userData.baseCast === undefined) obj.userData.baseCast = obj.castShadow;
     obj.castShadow = obj.userData.baseCast && k === 1;
   }
-  function walkFactors(node, k, hot) {
-    applyToObj(node, k, hot);
+  function walkFactors(node, k, dim, hot) {
+    applyToObj(node, k, dim, hot);
     for (const child of node.children) {
       // nested named groups (bayIDE, pipeContext, govPipes...) resolve their
       // own factor and own their subtree
       if (child.userData && child.userData.name && groups[child.userData.name] === child) {
         applyFactors(child);
       } else {
-        walkFactors(child, k, hot);
+        walkFactors(child, k, dim, hot);
       }
     }
   }
   function applyFactors(group) {
-    const { k, hot } = factorOf(group.userData.name);
-    walkFactors(group, k, hot);
+    const { k, dim, hot } = factorOf(group.userData.name);
+    walkFactors(group, k, dim, hot);
   }
   world._applyFactors = applyFactors;
   world._factorK = name => factorOf(name).k;
@@ -960,7 +1120,7 @@ export function buildWorld(scene) {
         for (const p of list) {
           const k = (t * speed + p.ph) % 1;
           curve.getPointAt(k, p.mesh.position);
-          p.mesh.material.opacity = p.mesh.material.userData.baseOpacity * Math.min(1, Math.sin(k * Math.PI) * 2);
+          setFade(p.mesh.material, p.mesh.material.userData.baseOpacity * Math.min(1, Math.sin(k * Math.PI) * 2));
         }
       },
     });
@@ -995,6 +1155,7 @@ export function buildWorld(scene) {
     blending: THREE.AdditiveBlending, depthWrite: false,
   });
   dustMat.userData = { baseOpacity: 0.3, baseEmissive: 0 };
+  ADDITIVE_MATS.push(dustMat);
   const dust = new THREE.Points(dustGeo, dustMat);
   lot.add(dust);
   animators.push({
@@ -1020,7 +1181,7 @@ export function buildWorld(scene) {
   sign.add(signSub);
   animators.push({
     update(t) {
-      signPanel.material.opacity = signPanel.material.userData.baseOpacity * world._modeOf(sign) * (0.75 + 0.25 * Math.sin(t * 9) * Math.sin(t * 2.3));
+      setFade(signPanel.material, signPanel.material.userData.baseOpacity * world._modeOf(sign) * (0.75 + 0.25 * Math.sin(t * 9) * Math.sin(t * 2.3)));
     },
   });
 
@@ -1342,10 +1503,10 @@ export function buildWorld(scene) {
     cd.arrows.forEach((ar, ai) => { ar.visible = cd.def.links[ai][1] < count && cd.def.links[ai][0] < count; });
   }
   function candOpacity(cd, k) {
-    const set = m => { m.material.opacity = m.material.userData.baseOpacity * k; };
-    cd.blocks.forEach(bl => { set(bl.m); if (bl.ring) set(bl.ring); bl.e.material.opacity = bl.e.material.userData.baseOpacity * k; });
+    const set = m => setFade(m.material, m.material.userData.baseOpacity * k);
+    cd.blocks.forEach(bl => { set(bl.m); if (bl.ring) set(bl.ring); setFade(bl.e.material, bl.e.material.userData.baseOpacity * k); });
     cd.arrows.forEach(ar => ar.children.forEach(set));
-    cd.lbl.material.opacity = cd.lbl.material.userData.baseOpacity * Math.max(k, 0.3);
+    setFade(cd.lbl.material, cd.lbl.material.userData.baseOpacity * Math.max(k, 0.3));
   }
   world.setMetaState = (screen, sub) => {
     if (screen === 8) {
@@ -1904,10 +2065,10 @@ export function buildWorld(scene) {
       }
       const allowed = maxStageRank();
       const groupMode = Math.max(world._factorK('journeys'), 0.001);
-      const setFade = (j, f) => {
+      const fadeJourney = (j, f) => {
         j.grp.traverse(o => {
           if (o.material && o.material.userData && o.material.userData.baseOpacity !== undefined) {
-            o.material.opacity = o.material.userData.baseOpacity * groupMode * f;
+            setFade(o.material, o.material.userData.baseOpacity * groupMode * f);
           }
         });
       };
@@ -1918,12 +2079,12 @@ export function buildWorld(scene) {
         if (j.mode === 'despawn') {
           j.segT += dt;
           const f = Math.max(0, 1 - j.segT / 0.55);
-          setFade(j, f);
+          fadeJourney(j, f);
           if (j.word) j.word.visible = false;
           if (j.segT >= 0.55) {
             j.mode = 'idle';
             j.grp.visible = false;
-            setFade(j, 1);
+            fadeJourney(j, 1);
           }
           continue;
         }
@@ -1939,7 +2100,7 @@ export function buildWorld(scene) {
         j.word.visible = showWord && world._factorK('journeys') === 1;
         if (j.word.visible) j.word.position.set(j.grp.position.x, j.grp.position.y + 2.4, j.grp.position.z);
         const fade = sg.fadeOut && k > 0.6 ? (1 - k) / 0.4 : 1;
-        if (sg.fadeOut) setFade(j, Math.max(fade, 0));
+        if (sg.fadeOut) fadeJourney(j, Math.max(fade, 0));
         if (j.segT >= sg.dur) {
           j.segT = 0;
           const next = j.segs[j.seg + 1];
@@ -1951,7 +2112,7 @@ export function buildWorld(scene) {
               // already faded to nothing at the end of the road: no re-flash
               j.mode = 'idle';
               j.grp.visible = false;
-              setFade(j, 1);
+              fadeJourney(j, 1);
             } else {
               j.mode = 'despawn';
               j.segT = 0;
@@ -2071,7 +2232,7 @@ export function buildWorld(scene) {
       for (const rd of riserDots) {
         const k = (t * 0.3 + rd.ph) % 1;
         rd.mesh.position.set(rd.rx, spineY + 0.4 + k * 10.4, -2.6);
-        rd.mesh.material.opacity = rd.mesh.material.userData.baseOpacity * Math.sin(k * Math.PI);
+        setFade(rd.mesh.material, rd.mesh.material.userData.baseOpacity * Math.sin(k * Math.PI));
       }
     },
   });
@@ -2200,7 +2361,7 @@ export function buildWorld(scene) {
       for (const s of stamped) {
         const k = (t * 0.17 + s.ph) % 1;
         s.tile.position.set(k * 5.5, 0.61, 0);
-        s.tile.material.opacity = s.tile.material.userData.baseOpacity * Math.min(1, (1 - k) * 3);
+        setFade(s.tile.material, s.tile.material.userData.baseOpacity * Math.min(1, (1 - k) * 3));
       }
     },
   });
@@ -2456,7 +2617,7 @@ export function buildWorld(scene) {
         const x0 = f.side < 0 ? MX - 34 : MX + 17.6;
         const x1 = f.side < 0 ? MX - 17.6 : MX + 34;
         f.blk.position.x = x0 + (x1 - x0) * k;
-        f.blk.material.opacity = f.blk.material.userData.baseOpacity * gk * Math.min(1, Math.sin(k * Math.PI) * 2.5);
+        setFade(f.blk.material, f.blk.material.userData.baseOpacity * gk * Math.min(1, Math.sin(k * Math.PI) * 2.5));
       }
     },
   });
@@ -2613,7 +2774,7 @@ export function buildWorld(scene) {
   animators.push({
     update(t) {
       for (const b of govBeams) {
-        b.material.opacity = b.material.userData.baseOpacity * world._modeOf(governance) * (0.5 + 0.5 * Math.sin(t * 2.4));
+        setFade(b.material, b.material.userData.baseOpacity * world._modeOf(governance) * (0.5 + 0.5 * Math.sin(t * 2.4)));
       }
     },
   });
@@ -2740,7 +2901,6 @@ export function buildWorld(scene) {
   };
 
   // ---------- profiles (screen 22) ----------
-  const GHOST = 0.12;
   const PROFILE_TARGETS = [
     'intake', 'bays', 'bayIDE', 'bayPortal', 'bayAuto', 'controlRoom', 'metaRack',
     'foundry', 'line', 'beltLine', 'loopBelt', 'robots', 'toolkits', 'patternShop',
@@ -2769,7 +2929,7 @@ export function buildWorld(scene) {
     if (name) {
       const def = PROFILES[name];
       for (const n of PROFILE_TARGETS) {
-        if (groups[n]) world._modes[n] = def.on.includes(n) ? 1 : GHOST;
+        if (groups[n]) world._modes[n] = def.on.includes(n) ? 1 : world._ghostK;
       }
     }
     for (const n of Object.keys(groups)) applyFactors(groups[n]);
@@ -2777,7 +2937,7 @@ export function buildWorld(scene) {
       const t0 = world.measThreads[0];
       t0.traverse(obj => {
         if (obj.material && obj.material.userData && obj.material.userData.baseOpacity !== undefined) {
-          obj.material.opacity = obj.material.userData.baseOpacity;
+          setFade(obj.material, obj.material.userData.baseOpacity);
           obj.visible = true;
         }
       });

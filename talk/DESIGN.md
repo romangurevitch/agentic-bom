@@ -222,8 +222,28 @@ rooms), 18 (four x-ray systems), and 22 (four profiles) have sub-steps.
 - Screen 18: `setInfraFocus` dims all groups except the highlighted system
   set and shows one tag sprite per sub-step.
 - Controls: Right/Space next, Left previous, drag rotates around the shot
-  focus, scroll zooms, `O` orbit, `N` notes, `1-6` act jump, `R` reset, URL
-  hash restores position. Clicking never advances.
+  focus, scroll zooms, `O` orbit, `N` notes, `T` theme, `1-6` act jump,
+  `R` reset, URL hash restores position. Clicking never advances.
+- Theme: dark (night plant) is the default; `T` flips to a clear sunny
+  day and persists via localStorage. Day swaps the sky, thins the fog to
+  a whisper, brightens the ambient rig and the sun, raises the bloom
+  threshold above the sky's luminance, turns the vignette off (it mixes
+  corners toward grey, which reads as mist on a light frame), switches
+  additive holograms to normal blending and darkens edge accents. HUD
+  chrome swaps via CSS variables; material palettes, in-world signage
+  and label plates are shared by both themes.
+- Dimming (profile ghosts, x-ray focus): at night components fade toward
+  black, reading as lights turning off. Under daylight nothing "turns
+  off", so dimmed components instead desaturate toward clay grey at
+  moderate opacity: still present, clearly not built. Dimmed materials
+  also stop writing depth, or mis-sorted translucent boxes cut sky-white
+  holes through the scene.
+- Render passes: fully-opaque materials live in the opaque pass; every
+  runtime opacity change goes through setFade so a material hops passes
+  as it dims. Keeping the whole plant transparent made the per-frame
+  distance sort reshuffle big boxes during camera flights (tearing, and
+  materializing pillars hiding behind the grass until birth finished).
+  Births keep writing depth so buildings fade in solid, not as x-rays.
 - Profiles re-light via material modes and swap room occupancy sets; the
   startup profile keeps the head office and catalog lit and one measurement
   thread alive.

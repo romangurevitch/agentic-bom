@@ -16,6 +16,8 @@ const $ = id => document.getElementById(id);
 
 let renderer = null;
 let composer = null;
+let bloom = null;
+let vignette = null;
 let scene, camera, world;
 let stepIndex = 0;
 let subIndex = 0;
@@ -66,9 +68,9 @@ if (renderer) {
   });
   composer = new EffectComposer(renderer, target);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.5, 0.45, 0.7);
+  bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.5, 0.45, 0.7);
   composer.addPass(bloom);
-  const vignette = new ShaderPass(VignetteShader);
+  vignette = new ShaderPass(VignetteShader);
   vignette.uniforms.offset.value = 1.15;
   vignette.uniforms.darkness.value = 1.1;
   composer.addPass(vignette);
@@ -262,6 +264,28 @@ function updateHud(step) {
   $('notes').innerHTML = step.notes.map(nt => `<li>${nt}</li>`).join('');
 }
 
+// ---------- theme ----------
+// T flips between the night look (default) and daylight; persisted so the
+// choice survives reloads. The head script pre-sets the html class, this
+// carries the same choice into the 3D scene and the post chain: on a light
+// sky the bloom threshold must climb above the background's luminance or
+// the whole frame glows, and the vignette softens so corners stay clean.
+
+let themeLight = document.documentElement.classList.contains('light');
+
+function applyTheme() {
+  document.documentElement.classList.toggle('light', themeLight);
+  try { localStorage.setItem('theme', themeLight ? 'light' : 'dark'); } catch { /* fine */ }
+  if (bloom) {
+    bloom.threshold = themeLight ? 0.95 : 0.7;
+    bloom.strength = themeLight ? 0.35 : 0.5;
+  }
+  // the vignette mixes corners toward (1 - darkness): a focus device at
+  // night, but on a light frame it reads as grey mist, so day disables it
+  if (vignette) vignette.enabled = !themeLight;
+  if (world) world.setTheme(themeLight);
+}
+
 // ---------- keyboard ----------
 
 // HUD scale: -/+ resizes the card; persisted so a projector setup sticks
@@ -275,6 +299,7 @@ applyHudScale();
 
 window.addEventListener('keydown', e => {
   if (e.key === 'f' || e.key === 'F') { setRoam(!freeRoam); return; }
+  if (e.key === 't' || e.key === 'T') { themeLight = !themeLight; applyTheme(); return; }
   if (freeRoam) {
     // any deck navigation drops back into the talk at the step you left
     if (e.key === 'Escape' || e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown'
@@ -420,6 +445,7 @@ function frame() {
   // labels are drawn to canvas at build time, so the font must be ready first
   try { await document.fonts.load('700 52px "Space Grotesk"'); } catch { /* system fallback */ }
   if (renderer) world = buildWorld(scene);
+  applyTheme();
   const wantRoam = /roam/.test(location.hash); // applyStep rewrites the hash
   const m = location.hash.match(/s=(\d+)(?:\.(\d+))?/);
   const s = m ? Number(m[1]) : 1;
