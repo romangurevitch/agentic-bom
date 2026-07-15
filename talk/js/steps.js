@@ -365,17 +365,18 @@ export const STEPS = [
     act: 5, accent: C.meas, kicker: 'Cross-cutting · Measurement',
     title: 'The sensors',
     bullets: [
-      'Adoption · impact · outcome validation · demand signals',
-      'Those numbers ride back to the intake as next quarter’s inputs',
-      'Without this line the factory is AI-assisted. With it, self-continuous.',
+      'Adoption: who uses which components, with what friction',
+      'Impact: cycle time, quality, cost. Demand: where autonomy pays vs where a human is cheaper.',
+      'Outcome validation: what shipped, checked against the outcome definition it was built to',
+      'Those numbers ride back to the intake as next quarter’s inputs. Without this line, AI-assisted; with it, self-continuous.',
     ],
     notes: [
-      '(Green threads converge, then the feed line runs back to intake.)',
+      '(Sensor pucks blink on every component; their threads converge on the live board, then the feed line runs back to intake.)',
       'Adoption: who uses which components, with what friction.',
       'Impact: cycle time, quality, cost. Outcome validation against the outcome definition. Demand: where autonomy pays vs where a human is cheaper.',
       'The line back to the intake gate is the whole thesis. Without it, AI-assisted delivery. With it, self-continuous.',
     ],
-    cam: { pos: [14, 28, 38], target: [-12, 5, -13] },
+    cam: { pos: [-14, 13, 9], target: [-24, 8.5, -15] },
   },
   {
     act: 6, accent: C.ink, kicker: 'The shared picture',

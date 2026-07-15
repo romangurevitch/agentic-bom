@@ -67,7 +67,7 @@ palette.
 | Distribution             | The Catalog Marketplace: neutral-ground hub serving many factories    |
 | Infrastructure           | The structure itself: slab/columns, belts, machine room, wires |
 | Governance               | Access arches with badge readers at the entrances, quality gates between stations, sign-off masts on the mixed rooms, an audit ledger tower collecting red record threads |
-| Measurement              | Green sensor threads converging on a dashboard, feed line back to intake |
+| Measurement              | Blinking sensor pucks on every component, green threads converging on a live-bar dashboard, pulsing feed line back to intake |
 | Outcome                  | Finished products shipping out the dock                      |
 
 Numbers appear ONLY on the screen-3 construction plan (it is the printed
@@ -168,8 +168,10 @@ rooms), 18 (four x-ray systems), 19 (four governance mechanisms), and 22
     gates between the stations; sign-off masts on the mixed rooms; the audit
     ledger tower with red record threads. Everything else dims; a single tag
     names each mechanism.
-20. **Measurement.** Threads from every layer to the dashboard; feed line
-    back to the intake.
+20. **Measurement.** Blinking sensor pucks at every source; threads from
+    every layer to the Measurement Hub board, which wears its name as a
+    mounted header sign, one caption plate per live bar; pulses ride the
+    feed line back to the intake.
 21. **The Full Plant.** Slow orbit; band labels return; everything running.
 22. **Choose Your Build.** Full BOM plus three profiles; components re-light
     AND room occupancy changes (startup people-heavy, scale-up balanced,

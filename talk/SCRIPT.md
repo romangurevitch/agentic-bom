@@ -221,7 +221,8 @@ speaker-notes strip (`N` key), step-synced.
   is what lets you say yes to autonomy, not the thing that says no.
 
 ### 20. Measurement: The Sensors
-- (Green threads converge, then the feed line runs back to intake.)
+- (Sensor pucks blink on every component; their threads converge on the live
+  board, then the feed line runs back to intake.)
 - Adoption: who uses which components, with what friction.
 - Impact: cycle time, quality, cost. Outcome validation against the outcome
   definition. Demand: where autonomy pays vs where a human is cheaper.

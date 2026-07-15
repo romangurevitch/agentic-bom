@@ -2972,16 +2972,39 @@ export function buildWorld(scene) {
     dash.add(cyl(0.28, 0.4, 5, mat(COLORS.steelDark, { rough: 0.5, metal: 0.6 }), px, 2.5, 0, 10));
   }
   dash.add(rbox(9.4, 3.4, 0.5, mat(0x131920, { rough: 0.3, metal: 0.4 }), 0, 6.4, 0, 0.15));
+  // live bars: each metric ticks at its own pace, so the board reads as
+  // a running instrument instead of a printed chart
+  const dashBars = [];
   [1.0, 1.7, 1.3, 2.1].forEach((bh, i) => {
     const bar = rbox(0.9, bh, 0.14, mat(COLORS.meas, { glow: true, ei: 0.8 }), -3.15 + i * 2.1, 5.75 + bh / 2, 0.32, 0.05);
     bar.castShadow = false;
     dash.add(bar);
+    dashBars.push({ bar, bh, ph: i * 1.7, speed: 0.5 + i * 0.17 });
   });
-  const dashPlate = makePlate('adoption · impact · outcomes · demand', COLORS.meas, 8.6, 0.95);
-  dashPlate.position.set(0, 5.15, 0.28);
-  dash.add(dashPlate);
-  const dashLbl = lab(makeLabel('adoption · impact · outcomes · demand', css(COLORS.meas), 0.8), [20]);
-  dashLbl.position.set(0, 9.4, 0);
+  animators.push({
+    update(t) {
+      for (const b of dashBars) {
+        const s = 0.72 + 0.32 * (0.5 + 0.5 * Math.sin(t * b.speed + b.ph));
+        b.bar.scale.y = s;
+        b.bar.position.y = 5.75 + (b.bh * s) / 2;
+      }
+    },
+  });
+  // the hub wears its name as a mounted header sign, and every live bar
+  // carries its own metric caption instead of one cramped legend strip
+  for (const hx of [-2.6, 2.6]) {
+    dash.add(cyl(0.07, 0.09, 0.75, mat(COLORS.steelDark, { rough: 0.5, metal: 0.6 }), hx, 8.35, 0.1, 8));
+  }
+  const hubSign = makePlate('Measurement Hub', COLORS.meas, 6.4, 1.2);
+  hubSign.position.set(0, 8.95, 0.24);
+  dash.add(hubSign);
+  ['adoption', 'impact', 'outcomes', 'demand'].forEach((mname, i) => {
+    const cap = makePlate(mname, COLORS.meas, 1.9, 0.52);
+    cap.position.set(-3.15 + i * 2.1, 5.15, 0.28);
+    dash.add(cap);
+  });
+  const dashLbl = lab(makeLabel('Measurement Hub · every component reports in', css(COLORS.meas), 0.85), [20]);
+  dashLbl.position.set(3.5, 10.8, 0);
   dash.add(dashLbl);
   dash.position.set(-26, 0, -16);
   measurement.add(dash);
@@ -2992,6 +3015,7 @@ export function buildWorld(scene) {
   ];
   const threads = [];
   const pulses = [];
+  const puckDots = [];
   threadFrom.forEach((p, i) => {
     const from = new THREE.Vector3(...p);
     const mid = from.clone().lerp(dashTop, 0.5);
@@ -3000,6 +3024,14 @@ export function buildWorld(scene) {
     const tb = new THREE.Mesh(new THREE.TubeGeometry(curve, 24, 0.07, 6), holoMat(COLORS.meas, 0.55));
     const tg = new THREE.Group();
     tg.add(tb);
+    // a sensor puck at the source: every component visibly reports out,
+    // the thread is not just a line hanging in the air
+    tg.add(cyl(0.34, 0.42, 0.22, mat(COLORS.steelDark, { rough: 0.45, metal: 0.65 }), from.x, from.y, from.z, 12));
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 10), mat(COLORS.meas, { glow: true, ei: 1.4, rough: 0.3 }));
+    dot.position.set(from.x, from.y + 0.22, from.z);
+    dot.castShadow = false;
+    tg.add(dot);
+    puckDots.push({ dot, ph: i * 0.9 });
     measurement.add(tg);
     threads.push(tg);
     const pulse = new THREE.Mesh(new THREE.SphereGeometry(0.26, 10, 10), mat(COLORS.meas, { glow: true, ei: 1.4, rough: 0.3 }));
@@ -3011,8 +3043,17 @@ export function buildWorld(scene) {
   const feedCurve = new THREE.CatmullRomCurve3([
     dashTop.clone(), new THREE.Vector3(-16, 16, -22), new THREE.Vector3(0, 14.5, -20.5),
   ]);
-  const feed = new THREE.Mesh(new THREE.TubeGeometry(feedCurve, 24, 0.16, 8), holoMat(COLORS.meas, 0.95));
+  const feed = new THREE.Mesh(new THREE.TubeGeometry(feedCurve, 24, 0.22, 8), holoMat(COLORS.meas, 0.95));
   measurement.add(feed);
+  // the feed line is the thesis: pulses visibly carry the numbers back
+  // to the intake instead of the tube just sitting there
+  const feedPulses = [];
+  for (let i = 0; i < 3; i++) {
+    const fp = new THREE.Mesh(new THREE.SphereGeometry(0.34, 10, 10), mat(COLORS.meas, { glow: true, ei: 1.5, rough: 0.3 }));
+    fp.castShadow = false;
+    measurement.add(fp);
+    feedPulses.push({ mesh: fp, ph: i / 3 });
+  }
   const feedLbl = lab(makeLabel('signals feed the intake · the loop closes', css(COLORS.meas), 0.9), [20], { band: true, group: 'measurement' });
   feedLbl.position.set(-10, 17.5, -22);
   measurement.add(feedLbl);
@@ -3021,6 +3062,12 @@ export function buildWorld(scene) {
       for (const p of pulses) {
         const k = (t * 0.25 + p.ph) % 1;
         p.curve.getPointAt(k, p.mesh.position);
+      }
+      for (const p of feedPulses) {
+        feedCurve.getPointAt((t * 0.3 + p.ph) % 1, p.mesh.position);
+      }
+      for (const d of puckDots) {
+        d.dot.material.emissiveIntensity = d.dot.material.userData.baseEmissive * (Math.sin(t * 2.6 + d.ph) > 0 ? 1 : 0.3);
       }
     },
   });
