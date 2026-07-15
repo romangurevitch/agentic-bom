@@ -66,7 +66,7 @@ palette.
 | Knowledge Layer          | The parts warehouse, provenance beacons, trunk into the spine |
 | Distribution             | The Catalog Marketplace: neutral-ground hub serving many factories    |
 | Infrastructure           | The structure itself: slab/columns, belts, machine room, wires |
-| Governance               | Red scanner arches over stations, cells, intake, and pipes   |
+| Governance               | Access arches with badge readers at the entrances, quality gates between stations, sign-off masts on the mixed rooms, an audit ledger tower collecting red record threads |
 | Measurement              | Green sensor threads converging on a dashboard, feed line back to intake |
 | Outcome                  | Finished products shipping out the dock                      |
 
@@ -109,7 +109,8 @@ parts list). No in-world label or HUD kicker carries a number.
 - **Act VI: The Picture** (21-23) full plant orbit, Choose Your Build, close
 
 Screens 8 (five sub-steps: foundry, three compositions, choose), 9 (seven
-rooms), 18 (four x-ray systems), and 22 (four profiles) have sub-steps.
+rooms), 18 (four x-ray systems), 19 (four governance mechanisms), and 22
+(four profiles) have sub-steps.
 
 ## Screen-by-screen
 
@@ -162,7 +163,11 @@ rooms), 18 (four x-ray systems), and 22 (four profiles) have sub-steps.
 18. **The Structure Itself.** Four x-ray sub-steps: slab and columns, the
     belts, the machine room, the wires. Everything else dims; a single tag
     names each system.
-19. **Governance.** Red arches over stations, cells, intake, pipes.
+19. **Governance.** Four sub-steps, one mechanism per press: access arches
+    with badge readers at the cells, intake, and pipes entrances; quality
+    gates between the stations; sign-off masts on the mixed rooms; the audit
+    ledger tower with red record threads. Everything else dims; a single tag
+    names each mechanism.
 20. **Measurement.** Threads from every layer to the dashboard; feed line
     back to the intake.
 21. **The Full Plant.** Slow orbit; band labels return; everything running.
@@ -219,8 +224,10 @@ rooms), 18 (four x-ray systems), and 22 (four profiles) have sub-steps.
   at each dwell.
 - The screen-3 plan sheet, experience screens, room nameplates, grass and
   roughness maps are all procedural canvas textures (offline).
-- Screen 18: `setInfraFocus` dims all groups except the highlighted system
-  set and shows one tag sprite per sub-step.
+- Screens 18 and 19 share one focus mechanism (`setInfraFocus` /
+  `setGovFocus`): dim all groups except the highlighted set, show one tag
+  sprite per sub-step. A focus owner guard keeps the two setters from
+  clobbering each other, since both are called on every screen change.
 - Controls: Right/Space next, Left previous, drag rotates around the shot
   focus, scroll zooms, `O` orbit, `N` notes, `T` theme, `1-6` act jump,
   `R` reset, URL hash restores position. Clicking never advances.

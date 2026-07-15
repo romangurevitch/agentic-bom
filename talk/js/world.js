@@ -1064,6 +1064,28 @@ export function buildWorld(scene) {
   world._applyFactors = applyFactors;
   world._factorK = name => factorOf(name).k;
 
+  // shared focus machinery for the x-ray screens (18: infrastructure,
+  // 19: governance): one tag sprite per sub-step, everything outside the
+  // highlighted set dims. main.js calls both setters on every screen
+  // change, so the owner guard keeps a null call from one system wiping
+  // the focus the other has just applied.
+  world._focusOwner = null;
+  function setFocusSet(owner, defs, tags, sub) {
+    tags.forEach((tg, i) => { tg.visible = sub === i; });
+    if (sub === null || sub === undefined || !defs[sub]) {
+      if (world._focusOwner !== owner) return;
+      world._focusOwner = null;
+      world._focus = {};
+    } else {
+      world._focusOwner = owner;
+      world._focus = {};
+      const set = defs[sub].set;
+      for (const n of Object.keys(groups)) world._focus[n] = set.includes(n) ? 1 : 0.1;
+    }
+    for (const n of Object.keys(groups)) applyFactors(groups[n]);
+  }
+  world._setFocusSet = setFocusSet;
+
   // birth: newly delivered components materialize in place (no beam)
   const births = [];
   world.materialize = name => {
@@ -2741,43 +2763,205 @@ export function buildWorld(scene) {
     linkMarket.add(collar);
   }
 
-  // ---- governance scanners (screen 19) ----
+  // ---- governance (screen 19): four mechanisms, one fixture each ----
+  // access arches at the entrances, quality gates between stations,
+  // sign-off masts on the mixed rooms, and the audit ledger tower
   const governance = reg('governance', 19);
+  const govSub = name => {
+    const g = new THREE.Group();
+    g.userData.name = name;
+    governance.add(g);
+    groups[name] = g;
+    return g;
+  };
+  const govAccess = govSub('govAccess');
+  const govGates = govSub('govGates');
+  const govDecision = govSub('govDecision');
+  const govAudit = govSub('govAudit');
+  const govPipes = govSub('govPipes');
+
+  // access control: arches remain only at the entrances, each foot wearing
+  // a badge reader; nothing enters unscanned
   const govBeams = [];
-  const archSpots = [];
-  for (let i = 0; i < 7; i++) archSpots.push([STATION_X(i), 0, -1.6, 'line']);
-  archSpots.push([0, 0, CELL_Z, 'cells']);
-  archSpots.push([0, 0, -16.5, 'intake']);
-  archSpots.push([46, UNDER_Y + 3, 0, 'pipes']);
-  const govPipes = new THREE.Group();
-  govPipes.userData.name = 'govPipes';
-  for (const [x, y, z, kind] of archSpots) {
-    const target = kind === 'pipes' ? govPipes : governance;
-    const radius = kind === 'pipes' ? 8.2 : kind === 'cells' ? 7.0 : 4.8;
-    const arch = torus(radius, 0.16, mat(COLORS.gov, { glow: true, ei: 0.9, metal: 0.3 }), x, y + 0.5, z, Math.PI);
+  const govReaders = [];
+  const accessSpots = [
+    [0, 0, CELL_Z, 7.0, govAccess],
+    [0, 0, -16.5, 4.8, govAccess],
+    [46, UNDER_Y + 3, 0, 8.2, govPipes],
+  ];
+  for (const [x, y, z, radius, target] of accessSpots) {
+    const arch = torus(radius, 0.24, mat(COLORS.gov, { glow: true, ei: 1.1, metal: 0.3 }), x, y + 0.5, z, Math.PI);
     arch.rotation.y = Math.PI / 2;
     target.add(arch);
     for (const fz of [-radius, radius]) {
       target.add(rbox(0.7, 0.9, 0.7, mat(COLORS.steelDark, { rough: 0.5, metal: 0.6 }), x, y + 0.45, z + fz, 0.1));
+      target.add(rbox(0.4, 1.6, 0.4, mat(COLORS.steelDark, { rough: 0.5, metal: 0.6 }), x + 1.1, y + 0.8, z + fz, 0.06));
+      const head = rbox(0.62, 0.75, 0.26, mat(0x1c232c, { rough: 0.4, metal: 0.5 }), x + 1.1, y + 1.85, z + fz, 0.05);
+      head.rotation.x = -0.25;
+      target.add(head);
+      const chip = rbox(0.32, 0.15, 0.08, mat(COLORS.gov, { glow: true, ei: 1.3 }), x + 1.1, y + 1.94, z + fz + 0.16, 0.02);
+      chip.castShadow = false;
+      target.add(chip);
+      govReaders.push({ chip, ph: (z + fz) * 0.7 + x, group: target });
     }
     const beam = new THREE.Mesh(new THREE.PlaneGeometry(radius * 1.9, radius * 0.9), holoMat(COLORS.gov, 0.1));
     beam.position.set(x, y + radius * 0.5, z);
     beam.rotation.y = Math.PI / 2;
     target.add(beam);
-    govBeams.push(beam);
+    govBeams.push({ beam, group: target });
   }
-  governance.add(govPipes);
-  groups.govPipes = govPipes;
-  const govLabel = lab(makeLabel('Governance · access · gates · decisions · audit', css(COLORS.gov), 1.1), [19], { band: true, group: 'governance' });
-  govLabel.position.set(0, 13.6, 0);
-  governance.add(govLabel);
   animators.push({
     update(t) {
       for (const b of govBeams) {
-        setFade(b.material, b.material.userData.baseOpacity * world._modeOf(governance) * (0.5 + 0.5 * Math.sin(t * 2.4)));
+        const k = world._factorK(b.group.userData.name);
+        setFade(b.beam.material, b.beam.material.userData.baseOpacity * k * (0.5 + 0.5 * Math.sin(t * 2.4)));
+      }
+      for (const r of govReaders) {
+        const k = world._factorK(r.group.userData.name);
+        r.chip.material.emissiveIntensity = r.chip.material.userData.baseEmissive * k * (Math.sin(t * 3 + r.ph) > 0.2 ? 1 : 0.25);
       }
     },
   });
+
+  // quality gates: one gate between every pair of stations; the curtain
+  // flares as a product rides through it
+  const gates = [];
+  for (let i = 0; i < 6; i++) {
+    const gx = STATION_X(i) + 3.5;
+    for (const pz of [-2.0, 2.0]) {
+      govGates.add(rbox(0.32, 3.0, 0.32, mat(COLORS.steelDark, { rough: 0.5, metal: 0.6 }), gx, 1.6, pz, 0.05));
+      govGates.add(rbox(0.36, 0.2, 0.36, mat(COLORS.gov, { glow: true, ei: 0.8 }), gx, 3.2, pz, 0.04));
+    }
+    govGates.add(rbox(0.3, 0.3, 4.4, mat(COLORS.gov, { glow: true, ei: 0.9, metal: 0.3 }), gx, 3.05, 0, 0.05));
+    // two crossed curtain planes so the light wall reads from the front
+    // shot as well as along the belt
+    const curtain = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 1.9), holoMat(COLORS.gov, 0.12));
+    curtain.position.set(gx, 1.9, 0);
+    curtain.rotation.y = Math.PI / 2;
+    govGates.add(curtain);
+    const curtainX = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.9), holoMat(COLORS.gov, 0.12));
+    curtainX.position.set(gx, 1.9, 0);
+    govGates.add(curtainX);
+    const lamp = rbox(0.42, 0.2, 0.42, mat(COLORS.gov, { glow: true, ei: 1.0 }), gx, 3.3, 0, 0.03);
+    lamp.castShadow = false;
+    govGates.add(lamp);
+    gates.push({ gx, curtain, curtainX, lamp, hot: 0 });
+  }
+  animators.push({
+    update(t, dt) {
+      const k = world._factorK('govGates');
+      for (const g of gates) {
+        let near = false;
+        for (const j of journeys) {
+          if (j.mode === 'idle' || !j.grp.visible) continue;
+          const p = j.grp.position;
+          if (Math.abs(p.x - g.gx) < 0.9 && Math.abs(p.z) < 0.8 && p.y < 2.2) { near = true; break; }
+        }
+        g.hot += ((near ? 1 : 0) - g.hot) * Math.min(1, dt * 8);
+        setFade(g.curtain.material, g.curtain.material.userData.baseOpacity * k * (1 + g.hot * 3));
+        setFade(g.curtainX.material, g.curtainX.material.userData.baseOpacity * k * (1 + g.hot * 3));
+        g.lamp.material.emissiveIntensity = g.lamp.material.userData.baseEmissive * k * (0.3 + g.hot * 1.4);
+      }
+    },
+  });
+
+  // decision rules: a sign-off mast on each mixed room (Design, Verify,
+  // Measure); the slow-spinning ring is the arch motif at desk scale
+  const signRings = [];
+  for (const i of [1, 3, 6]) {
+    const x = STATION_X(i) - 1.1;
+    govDecision.add(cyl(0.08, 0.12, 2.2, mat(COLORS.steel, { rough: 0.45, metal: 0.7 }), x, 4.8, ROOM_Z, 10));
+    const ring = torus(0.65, 0.11, mat(COLORS.gov, { glow: true, ei: 1.1 }), x, 6.3, ROOM_Z);
+    govDecision.add(ring);
+    signRings.push(ring);
+    beacon(govDecision, COLORS.gov, x, 7.0, ROOM_Z, 2.2);
+  }
+  animators.push({
+    update(t) { for (const r of signRings) r.rotation.y = t * 0.8; },
+  });
+
+  // audit: the ledger tower east of the line; every fixture reports into
+  // it and the record rows visibly fill, recorded and replayable
+  const AUD = { x: 27.5, z: -8 };
+  govAudit.add(rbox(4.2, 0.5, 4.2, mat(0x232a31, { rough: 0.7, metal: 0.2 }), AUD.x, 0.25, AUD.z, 0.1));
+  govAudit.add(rbox(3.2, 5.6, 3.2, mat(0x1c232c, { rough: 0.45, metal: 0.5 }), AUD.x, 3.3, AUD.z, 0.15));
+  const audEdge = edges(3.2, 5.6, 3.2, COLORS.gov, 0.35);
+  audEdge.position.set(AUD.x, 3.3, AUD.z);
+  govAudit.add(audEdge);
+  const ledgerLeds = [];
+  for (let r = 0; r < 7; r++) {
+    const ry = 1.0 + r * 0.64;
+    govAudit.add(rbox(2.4, 0.4, 0.14, mat(0x2b3542, { rough: 0.4, metal: 0.5 }), AUD.x - 0.2, ry, AUD.z + 1.66, 0.03));
+    const led = rbox(0.42, 0.18, 0.08, mat(COLORS.gov, { glow: true, ei: 1.1 }), AUD.x + 1.15, ry, AUD.z + 1.71, 0.02);
+    led.castShadow = false;
+    govAudit.add(led);
+    ledgerLeds.push(led);
+  }
+  const audPlate = makePlate('Audit ledger', COLORS.gov, 3.4, 0.8);
+  audPlate.position.set(AUD.x, 5.5, AUD.z + 1.62);
+  govAudit.add(audPlate);
+  animators.push({
+    update(t) {
+      const k = world._factorK('govAudit');
+      const fill = 1 + Math.floor((t / 0.7) % 7);
+      ledgerLeds.forEach((led, r) => {
+        const on = r < fill ? 1 : 0.12;
+        const blink = r === fill - 1 ? (Math.sin(t * 9) > 0 ? 1 : 0.25) : 1;
+        led.material.emissiveIntensity = led.material.userData.baseEmissive * k * on * blink;
+      });
+    },
+  });
+  // red record threads: one from each mechanism into the tower top
+  const audPulses = [];
+  const audSources = [
+    [0, 8.0, CELL_Z],
+    [0, 5.6, -16.5],
+    [3.5, 3.2, 0],
+    [STATION_X(3) - 1.1, 6.4, ROOM_Z],
+    [46, UNDER_Y + 11.5, 0],
+  ];
+  audSources.forEach((from, i) => {
+    const a = new THREE.Vector3(...from);
+    const b2 = new THREE.Vector3(AUD.x, 6.2, AUD.z);
+    const mid = a.clone().lerp(b2, 0.5);
+    mid.y = Math.max(a.y, b2.y) + 3.5;
+    const curve = new THREE.CatmullRomCurve3([a, mid, b2]);
+    const thread = new THREE.Mesh(new THREE.TubeGeometry(curve, 24, 0.09, 6), holoMat(COLORS.gov, 0.45));
+    govAudit.add(thread);
+    const p = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), mat(COLORS.gov, { glow: true, ei: 1.3 }));
+    p.castShadow = false;
+    govAudit.add(p);
+    audPulses.push({ curve, mesh: p, ph: i / 5 });
+  });
+  animators.push({
+    update(t) {
+      for (const p of audPulses) p.curve.getPointAt((t * 0.22 + p.ph) % 1, p.mesh.position);
+    },
+  });
+
+  // per-mechanism tags and focus sets (mirrors the screen 18 x-ray)
+  const govTags = reg('govTags', 19);
+  const GOVX = [
+    { set: ['govAccess', 'govPipes', 'govTags', 'bays', 'bayIDE', 'bayPortal', 'bayAuto', 'intake', 'pipes', 'pipeContext', 'pipeAction', 'pipeObserve'],
+      tag: 'Access control · badge in at every entrance', pos: [0, 11.5, -14] },
+    { set: ['govGates', 'govTags', 'line', 'beltLine', 'journeys'],
+      tag: 'Quality gates · a check between every station', pos: [10, 7, 0] },
+    { set: ['govDecision', 'govTags', 'line'],
+      tag: 'Decision rules · where a human signs off', pos: [5.5, 9.5, -5] },
+    { set: ['govAudit', 'govAccess', 'govGates', 'govDecision', 'govPipes', 'govTags'],
+      tag: 'Audit · every action recorded, replayable', pos: [23, 10.0, -9] },
+  ];
+  const govTagSprites = GOVX.map(x2 => {
+    const s = makeLabel(x2.tag, css(COLORS.gov), 0.85);
+    s.position.set(...x2.pos);
+    s.visible = false;
+    govTags.add(s);
+    return s;
+  });
+  world.setGovFocus = sub => setFocusSet('gov', GOVX, govTagSprites, sub);
+  const govLabel = lab(makeLabel('Governance · access · gates · decisions · audit', css(COLORS.gov), 1.1), [], { band: true, group: 'governance' });
+  govLabel.position.set(0, 13.6, 0);
+  governance.add(govLabel);
 
   // ---- measurement sensors (screen 20) ----
   const measurement = reg('measurement', 20);
@@ -2890,15 +3074,7 @@ export function buildWorld(scene) {
   const infraLabel = lab(makeLabel('Infrastructure · the structure itself', css(COLORS.infra), 1.0), [], { band: true, group: 'lot' });
   infraLabel.position.set(0, -7, 26);
   infraTags.add(infraLabel);
-  world.setInfraFocus = sub => {
-    world._focus = {};
-    xrayTags.forEach((tg, i) => { tg.visible = sub === i; });
-    if (sub !== null && XRAY[sub]) {
-      const set = XRAY[sub].set;
-      for (const n of Object.keys(groups)) world._focus[n] = set.includes(n) ? 1 : 0.1;
-    }
-    for (const n of Object.keys(groups)) applyFactors(groups[n]);
-  };
+  world.setInfraFocus = sub => setFocusSet('infra', XRAY, xrayTags, sub);
 
   // ---------- profiles (screen 22) ----------
   const PROFILE_TARGETS = [
@@ -2906,7 +3082,8 @@ export function buildWorld(scene) {
     'foundry', 'line', 'beltLine', 'loopBelt', 'robots', 'toolkits', 'patternShop',
     'pipes', 'pipeContext', 'pipeAction', 'pipeObserve', 'warehouse', 'market',
     'machineRoom', 'basementNet', 'linkPatterns', 'linkPipesCap', 'linkKnow',
-    'linkMarket', 'governance', 'govPipes', 'measurement', 'dock', 'journeys',
+    'linkMarket', 'governance', 'govPipes', 'govAccess', 'govGates',
+    'govDecision', 'govAudit', 'measurement', 'dock', 'journeys',
   ];
   const PROFILES = {
     startup: {

@@ -108,6 +108,7 @@ function updateWorldVisibility() {
   if (n !== 9) world.setStationCount(7);
   world.setMetaState(n, n === 8 ? subIndex : null);
   world.setInfraFocus(n === 18 ? subIndex : null);
+  world.setGovFocus(n === 19 ? subIndex : null);
   world.updateLabels(n);
 }
 

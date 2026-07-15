@@ -208,10 +208,15 @@ speaker-notes strip (`N` key), step-synced.
 ## Act V: The Invisible Systems
 
 ### 19. Governance: The Scanners
-- (Red arches snap on everywhere at once: stations, cells, intake, pipes.)
-- Access control: who or which agent can do what, where, for how long.
-- Quality gates between stations; decision rules for human sign-off; audit,
-  recorded and replayable.
+- (One press per mechanism; everything else dims.)
+- Access control: badge readers on the entrance arches. Who, or which agent,
+  can do what, where, for how long.
+- (Press) Quality gates: a gate between every pair of stations. Work does not
+  move on until its output meets the definition of done.
+- (Press) Decision rules: sign-off masts on the mixed rooms, Design, Verify,
+  Measure. They encode when a human must sign and when an agent may proceed.
+- (Press) Audit: every verdict and sign-off streams into the ledger, recorded
+  and replayable.
 - Governance is a field over the whole plant, not a checkpoint at the end. It
   is what lets you say yes to autonomy, not the thing that says no.
 
