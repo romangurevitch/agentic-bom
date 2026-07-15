@@ -34,30 +34,31 @@ speaker-notes strip (`N` key), step-synced.
 ## Act II: The Line
 
 ### 4. First, the Head Office
-- Everything reads the same way. Input in at the intake, outcome out at the
-  dock.
+- One orientation before we build: work flows front to back, in at the intake
+  wall, out at the shipping dock. Everything else hangs off that line.
 - Before any machinery, the Head Office rises as the TOP LEVEL, a deck above
   where the factory will stand.
 - Inside it sits the business, technical and non-technical leadership. They
   define the requirements and what needs to be built.
-- They are not going to run this factory. They are going to CREATE it.
-  Everything you see tonight is decided up there.
+- They are not going to run this factory. They are going to CREATE it: choose
+  each team’s workflow, define the definition of done, set the mandatory
+  baseline. Every component tonight is a decision made up here.
 
 ### 5. Intake Gate: Continuous Inputs
-- The first component is delivered. The intake gate, right under the head
-  office.
+- The first component is delivered. The intake gate, right under the Head
+  Office.
 - Five chutes: business goals; leadership direction; user feedback; telemetry
   and incidents; market and regulation.
-- Watch the amber pipes. Goals and direction pour straight out of the head
-  office into their funnels; direction never travels far.
+- Watch the amber pipes. Goals and direction pour straight out of the Head
+  Office into their funnels; direction never travels far.
 - Read the labels. A Sev-2, an NPS dip, a CPS 230 update. Real inputs,
   arriving at a steady pace.
 - And each input starts a PRODUCT. A base plate on the belt. Every layer it
   passes will add a piece. By the dock it will be a whole thing.
 
 ### 6. Experience: Three Ways In
-- The collector belt feeds three very different setups. Look at the screens,
-  not at me.
+- The collector belt feeds three cells, three very different ways in. Look at
+  the screens, not at me.
 - IDE: an engineer, shorts and t-shirt, living in an editor with their agent.
 - Portal: a BA, a PM, security, design; the suit. Same factory through a
   browser.
@@ -66,18 +67,19 @@ speaker-notes strip (`N` key), step-synced.
 - If only engineers have a way in, you automated a team, not an SDLC.
 
 ### 7. Inside the Head Office
-- Up to the top level, into the head office. The catalog just arrived on the
+- Up to the top level, into the Head Office. The catalog just arrived on the
   wall.
 - This is where the way of working is decided: lifecycle profiles per domain,
   role playbooks, outcome definitions written before work starts, the
   mandatory baseline every initiative meets.
 - The wall rack is the component catalog: workflow blocks, skills, templates,
-  connectors. Unique to the org.
-- These blocks are not settings. They compose. And composition happens next
-  door.
+  connectors. Unique to the org. Where the catalog is stocked from, we will
+  see when we leave the plant.
+- These blocks are not settings to toggle. They chain into whole team
+  workflows, and that assembly happens next door.
 
 ### 8. The Meta Workflow, at the Workflow Foundry
-- Beside the head office on the top level stands the Workflow Foundry, a
+- Beside the Head Office on the top level stands the Workflow Foundry, a
   factory whose only product is workflows. Its name is The Meta Workflow, the
   workflow that builds your workflows.
 - (Press) A product team’s workflow assembles, a clean line from Define to
@@ -87,9 +89,9 @@ speaker-notes strip (`N` key), step-synced.
 - (Press) A platform team’s is a gated LOOP, heavy verify and release gates,
   and work that cycles back.
 - Same catalog blocks. Visibly different shapes. That is the point of the
-  foundry. Workflows become intentional and composed, instead of accreting by
-  accident.
-- (Press) the head office chooses one for our factory; it flies down from the
+  foundry: each team’s workflow is assembled and owned on purpose, instead of
+  accreting by accident.
+- (Press) the Head Office chooses one for our factory; it flies down from the
   top level and lays itself out where our line will stand.
 - Because an agent can only drive a workflow that is explicitly described.
   Next, watch it become the line.
@@ -99,7 +101,7 @@ speaker-notes strip (`N` key), step-synced.
   block becomes a station ROOM. (One per press.)
 - Define: intent and acceptance criteria, machine-readable enough to verify
   against.
-- Design: architecture, ADRs, patterns from a catalogue. Build: implementation
+- Design: architecture, ADRs, patterns from a catalog. Build: implementation
   against explicit rules.
 - Verify: tests plus evals; agent output needs evaluation criteria, not just
   green CI.
@@ -111,8 +113,8 @@ speaker-notes strip (`N` key), step-synced.
 ### 10. The Loop
 - Watch the return conveyor. Measure feeds Define.
 - Now the journey is complete. An input starts a product, the cells route it,
-  every room adds a piece, and a FINISHED product ships out the dock. The
-  signal rides back.
+  every room adds a piece, and a FINISHED product ships out the dock. And the
+  measurements ride back to the intake as new inputs.
 - Most orgs run a pipeline that ends. This line feeds itself.
 - AI-assisted means humans drive every step slightly faster. Self-continuous
   means the system carries work between stages and humans govern it.
@@ -124,7 +126,7 @@ speaker-notes strip (`N` key), step-synced.
 - One room holds only people. Define, where judgment and intent live.
 - Some rooms hold only agents. Build, Release, Operate; work that runs
   unattended.
-- Some rooms are mixed. Design, Measure, and Verify, where a human signs off
+- Some rooms are mixed. Design, Verify, and Measure, where a human signs off
   with an agent beside them. Decision rules, made visible.
 - On the open floor, cloud agents roam, and specialists (reviewer, evaluator)
   compose into flows.
@@ -132,12 +134,13 @@ speaker-notes strip (`N` key), step-synced.
   maturity, not an accident.
 
 ### 12. The Dive: Under the Floor
-- Everything the workforce reaches for is down here, and it is CONNECTED.
-- Each foundation layer runs a trunk into the central spine; risers carry it
-  up into every room; wires feed the cells and the dock.
-- Watch the pulses, data flowing up to the floors above. This basement is what
-  makes the top floor look effortless.
-- Four layers down here. (Camera dives.)
+- Everything the workforce reaches for is down here: four layers. Capability,
+  standards, integration, knowledge.
+- Each layer runs a trunk into the central spine, and risers carry it up into
+  every room. Shared services every stage draws on, not per-team copies.
+- Watch the pulses climbing. When an agent on the floor looks effortless, it
+  is because one of these layers answered.
+- (Camera dives.) We take them one at a time.
 
 ### 13. The Toolkits: Capability Layer
 - What agents know how to do. The verbs.
@@ -145,7 +148,7 @@ speaker-notes strip (`N` key), step-synced.
   watch its pulses climb to the rooms above.
 - Treat them like production code: versioned, reviewed, discoverable.
 - A prompt in someone’s notes app is not a capability. And these racks will
-  sync with the marketplace later; hold that thought.
+  sync with the Catalog Marketplace later; hold that thought.
 
 ### 14. The Pattern Shop: Standards & Patterns
 - How good looks. The nouns. This is the Pattern Shop, where the master
@@ -163,29 +166,32 @@ speaker-notes strip (`N` key), step-synced.
   single main runs through the wall into the spine.
 - Context: read-only grounding. Action: scoped, time-bound writes. Observe:
   traces and evals out.
-- An approved menu beats every team re-discovering integration. Valves on
-  everything.
+- An approved menu beats every team re-discovering integration. Every
+  connection scoped, audited, revocable.
 
 ### 16. The Warehouse: Knowledge Layer
 - What agents are allowed to ground on. The warehouse feeds the cyan trunk
   into the spine.
-- Architecture truth, internal knowledge bases, process and standards, bounded
-  external docs.
+- Code and architecture truth, internal knowledge bases, process and
+  standards, bounded external docs.
 - Every shelf has provenance and freshness labels.
 - And see the cross-links. Knowledge feeds the pipes and the toolkits; answer
   what is true and current once, not per project.
 
 ## Act IV: Beyond One Plant
 
-### 17. The Marketplace: Distribution
-- Zoom out. The marketplace stands on neutral ground, between our plant and
+### 17. The Catalog Marketplace: Distribution
+- Zoom out. The Catalog Marketplace stands on neutral ground, between our plant and
   the others. It does not belong to us.
-- One marketplace, many factories. Watch the drones; spokes run to every plant
+- One Catalog Marketplace, many factories. Watch the drones; spokes run to every plant
   on the horizon, and ours is just one of them.
 - Imports arrive from the internet, from vendors, from other factories. Proven
   components flow back out.
-- And our head office CONSUMES from it, marketplace to catalog to foundry. The
-  workflow blocks you saw composing earlier? This is where they come from.
+- The supply main under the wall feeds the toolkit racks in our basement.
+  That is the sync I promised earlier.
+- And our Head Office CONSUMES from it. The Catalog Marketplace stocks our
+  component catalog, and the catalog feeds the foundry. The workflow blocks
+  you saw composing earlier? This is where they come from.
 - One good plant is a pilot. Components moving between plants is an operating
   model.
 
@@ -221,9 +227,10 @@ speaker-notes strip (`N` key), step-synced.
 
 ### 21. The Full Plant
 - (Slow orbit. Say little. Let it run.)
-- Eleven components, two systems over the top, one loop. Head office, foundry,
-  marketplace, and the plant, all wired together.
-- Every piece is boring on its own. The value is the composition.
+- Eleven components, two systems over the top, one loop. Head Office, Workflow
+  Foundry, Catalog Marketplace, and the plant, all wired together.
+- No single component here is novel. The leverage is that they are wired
+  together and carry work end to end.
 - This picture is what most adoption efforts are missing. Not the parts, the
   parts list.
 
@@ -232,7 +239,7 @@ speaker-notes strip (`N` key), step-synced.
   not.
 - (Start on Full BOM: everything lit.) This is the complete parts list. Now
   watch what different orgs actually build from it.
-- Same head office, same catalog, three different factories. Watch the
+- Same Head Office, same catalog, three different factories. Watch the
   components AND who is inside the rooms.
 - (Select Garage Startup.) A simple line, people in most rooms with one agent
   helping. A coding agent, a slim skills folder, one pipe, one metric.
@@ -247,8 +254,8 @@ speaker-notes strip (`N` key), step-synced.
   of people and agents.
 
 ### 23. Close
-- The gap in agentic engineering is not a missing tool. It is the missing
-  picture.
+- You have just watched the whole picture assemble. Here is what to take
+  home.
 - Take the parts list home. Hold your org against it. Decide each component’s
   depth deliberately, even if the decision is one file.
 - And compose your Meta Workflow deliberately. Decide how your teams’

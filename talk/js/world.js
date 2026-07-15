@@ -4,9 +4,9 @@
 //  - The Head Office and the Workflow Foundry are the TOP LEVEL of the
 //    plant: a deck raised first, above where the intake will stand. The
 //    business decides and creates the factory from up there, and its goals
-//    and direction pipe straight down into the intake funnels. The
-//    Marketplace on neutral ground serves MANY factories and the head
-//    office consumes from it.
+//    and direction pipe straight down into the intake funnels. The Catalog
+//    Marketplace on neutral ground serves MANY factories and the Head
+//    Office consumes from it.
 //  - One connected flow: five LEGO-style products assemble as they travel
 //    funnel -> collector belt -> experience cell -> past each station room ->
 //    dock, gaining one part per layer.
@@ -55,7 +55,7 @@ const CELL_X = { IDE: -16, Portal: 0, Auto: 16 };
 const DECK_TOP = 13;
 const OFFICE = new THREE.Vector3(-14, DECK_TOP, -28);
 const FOUNDRY = new THREE.Vector3(12, DECK_TOP, -28);
-// the Marketplace: neutral ground north-west of our plant, between it and
+// the Catalog Marketplace: neutral ground north-west of our plant, between it and
 // the far plants; a full-size black-box factory in its own right
 const MARKET = new THREE.Vector3(-58, 0, -68);
 const LABEL_FONT = '"Space Grotesk", ui-sans-serif, sans-serif';
@@ -757,7 +757,7 @@ function sheetTexture() {
   fitText('HEAD OFFICE', px0 + 14, py0 + 640, 162, 600, 21, ink);
   fitText('TOP LEVEL · L1', px0 + 14, py0 + 666, 162, 500, 19, inkDim);
   rect(px0 + 210, py0 + 590, 190, 90, 2, ink);
-  fitText('MARKETPLACE', px0 + 224, py0 + 640, 162, 600, 21, ink);
+  fitText('CATALOG MARKETPLACE', px0 + 224, py0 + 640, 162, 600, 21, ink);
   fitText('SERVES MANY PLANTS', px0 + 224, py0 + 666, 162, 500, 19, inkDim);
   const nx = px0 + pw - 32, ny = py0 + 635;
   x.strokeStyle = ink; x.lineWidth = 2.5;
@@ -790,7 +790,7 @@ function sheetTexture() {
   x.fillText('DESCRIPTION', rvx + 76, rvy + 28);
   x.font = `500 20px ${LABEL_FONT}`;
   x.fillStyle = inkDim;
-  const revs = ['A  first issue', 'B  foundry added', 'C  marketplace split out'];
+  const revs = ['A  first issue', 'B  foundry added', 'C  catalog marketplace split out'];
   revs.forEach((r, i) => {
     x.fillText(r[0], rvx + 22, rvy + 70 + i * 38);
     x.fillText(r.slice(3), rvx + 76, rvy + 70 + i * 38);
@@ -2396,7 +2396,7 @@ export function buildWorld(scene) {
   pipes.add(cyl(0.35, 0.35, 0.9, mat(COLORS.steelLight, { rough: 0.4, metal: 0.7 }), HUBX, HUBY + 1.65, 0, 10));
   beacon(pipes, COLORS.int, HUBX, HUBY + 2.4, 0, 2.8);
   // the layer name rides the hub drum's south end cap
-  const hubPlate = makePlate('Integration Layer · MCP', COLORS.int, 2.6, 0.6);
+  const hubPlate = makePlate('Integration Layer · MCP', COLORS.int, 4.6, 1.06);
   hubPlate.position.set(HUBX, HUBY, 8.09);
   pipes.add(hubPlate);
   const hubMain = cyl(0.8, 0.8, 4.6, mat(COLORS.int, { rough: 0.3, metal: 0.7, opacity: 0.95 }), 32.3, HUBY, 0, 14);
@@ -2452,8 +2452,8 @@ export function buildWorld(scene) {
     lbl.position.set(50, UNDER_Y + 6.0, z);
     g.add(lbl);
     // rooftop sign on the endpoint cabinet, leaned back like a billboard
-    const cabPlate = makePlate(name, COLORS.int, 3.0, 0.66);
-    cabPlate.position.set(58, UNDER_Y + 4.5, z + 0.55);
+    const cabPlate = makePlate(name, COLORS.int, 6.2, 1.36);
+    cabPlate.position.set(58, UNDER_Y + 5.0, z + 0.55);
     cabPlate.rotation.x = -0.15;
     g.add(cabPlate);
     pipes.add(g);
@@ -2545,7 +2545,7 @@ export function buildWorld(scene) {
   pulsesAlong(linkKnow, lk2.userData.curve, COLORS.know, 1, 0.16, 0.1);
   flangesAlong(linkKnow, lk2.userData.curve, 0.11, 3);
 
-  // ---- the Marketplace (screen 17): one hub, many factories ----
+  // ---- the Catalog Marketplace (screen 17): one hub, many factories ----
   const market = reg('market', 17);
   const MX = MARKET.x, MZ = MARKET.z;
   const mpad = mat(0x232a31, { rough: 0.8, metal: 0.1 });
@@ -2572,10 +2572,10 @@ export function buildWorld(scene) {
     }
   }
   // the building wears its own name, on the faces the cameras see
-  const mPlateS = makePlate('the Marketplace', COLORS.dist, 13, 2.4);
+  const mPlateS = makePlate('Catalog Marketplace', COLORS.dist, 13, 2.4);
   mPlateS.position.set(MX, BY + 12.4, MZ + 13.08);
   market.add(mPlateS);
-  const mPlateE = makePlate('the Marketplace', COLORS.dist, 13, 2.4);
+  const mPlateE = makePlate('Catalog Marketplace', COLORS.dist, 13, 2.4);
   mPlateE.position.set(MX + 18.08, BY + 12.4, MZ);
   mPlateE.rotation.y = Math.PI / 2;
   market.add(mPlateE);
@@ -2643,7 +2643,7 @@ export function buildWorld(scene) {
     market.add(rbox(6.5, 0.25, 6.5, mat(0x1a212a, { rough: 0.6, metal: 0.3 }), MX + dx, GROUND_Y + 0.72, MZ + dz, 0.08));
     market.add(rbox(5.2, 0.08, 5.2, mat(COLORS.dist, { glow: true, ei: 0.3, opacity: 0.6 }), MX + dx, GROUND_Y + 0.9, MZ + dz, 0.03));
   }
-  const mLabel = lab(makeLabel('the Marketplace', css(COLORS.dist), 1.1), [17], { band: true, group: 'market' });
+  const mLabel = lab(makeLabel('Catalog Marketplace', css(COLORS.dist), 1.1), [17], { band: true, group: 'market' });
   mLabel.position.set(MX, GROUND_Y + 27, MZ);
   market.add(mLabel);
   const mSub = lab(makeLabel('skills · MCPs · templates · workflow blocks', css(COLORS.dist), 0.75), [17]);
@@ -2887,7 +2887,7 @@ export function buildWorld(scene) {
     infraTags.add(s);
     return s;
   });
-  const infraLabel = lab(makeLabel('Infrastructure · the ground you own', css(COLORS.infra), 1.0), [], { band: true, group: 'lot' });
+  const infraLabel = lab(makeLabel('Infrastructure · the structure itself', css(COLORS.infra), 1.0), [], { band: true, group: 'lot' });
   infraLabel.position.set(0, -7, 26);
   infraTags.add(infraLabel);
   world.setInfraFocus = sub => {

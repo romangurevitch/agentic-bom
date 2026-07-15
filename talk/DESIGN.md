@@ -8,7 +8,7 @@ Speaker: Roman Gurevitch, Principal Software Engineer, Mantel
 We build an agentic software factory live on stage, in a 3D isometric game
 world. The story has one authority: **the Head Office**, where **the
 business** (technical and non-technical leadership) defines requirements and
-direction. They do not run the factory; they CREATE it. The head office and
+direction. They do not run the factory; they CREATE it. The Head Office and
 the foundry are the TOP LEVEL of the plant: a deck raised over the intake
 wall, built incrementally as the talk progresses: first the deck and the
 leadership floor (screen 4), then the component catalog covering its east
@@ -21,10 +21,10 @@ from catalog blocks as visibly different topologies (a product team's line, a
 data team's branch, a platform team's gated loop). The Head Office chooses
 one; it flies down from the top level and becomes the assembly line.
 
-**Distribution is the Marketplace**: a hub on neutral ground between our
-plant and the far plants. One marketplace serves MANY factories; imports
+**Distribution is the Catalog Marketplace**: a hub on neutral ground between our
+plant and the far plants. One Catalog Marketplace serves MANY factories; imports
 arrive from the internet, vendors, and other plants; proven components flow
-back out; our head office CONSUMES from it (marketplace to catalog to
+back out; our Head Office CONSUMES from it (it stocks the component catalog, which feeds the
 foundry).
 
 The factory is **one connected flow** carried by **LEGO-style products**:
@@ -64,7 +64,7 @@ palette.
 | Standards & Patterns     | The Pattern Shop: master patterns on stands + a stamping press |
 | Integration (MCP)        | Pipes anchored to the building via flanged wall penetrations  |
 | Knowledge Layer          | The parts warehouse, provenance beacons, trunk into the spine |
-| Distribution             | The Marketplace: neutral-ground hub serving many factories    |
+| Distribution             | The Catalog Marketplace: neutral-ground hub serving many factories    |
 | Infrastructure           | The structure itself: slab/columns, belts, machine room, wires |
 | Governance               | Red scanner arches over stations, cells, intake, and pipes   |
 | Measurement              | Green sensor threads converging on a dashboard, feed line back to intake |
@@ -76,7 +76,7 @@ parts list). No in-world label or HUD kicker carries a number.
 ## Site plan
 
 - **The ground**: night grass terrain with a paved lot (plinth + survey
-  grid) under the plant and a pad under the marketplace. Street level is
+  grid) under the plant and a pad under the Catalog Marketplace. Street level is
   y 0; the lot surface is y -12; terrain is y -13.6. Everything visibly
   stands on something.
 - **The factory** (center): plant shell on the paved lot; intake wall at the
@@ -84,11 +84,11 @@ parts list). No in-world label or HUD kicker carries a number.
   rooms BEHIND it (products ride past the rooms, never through them); loop
   conveyor; dock at the front; the connected basement below.
 - **The top level**: a deck on tall columns over the back of the plant,
-  directly above the intake wall. The head office (leadership figures,
+  directly above the intake wall. The Head Office (leadership figures,
   direction screens, catalog wall inside) stands on its west half; the
   foundry hall rises beside it on the east half at screen 8. Amber feed
   pipes run from the office front into the goals and direction funnels.
-- **The Marketplace**: pad on neutral ground north-west of the plant,
+- **The Catalog Marketplace**: pad on neutral ground north-west of the plant,
   between our factory and the far plants. The hub is a sealed black-box
   plant at our factory's scale: glowing seams, its name on the walls, roof
   vents and stack, a rooftop drone port, and in/out conveyors where
@@ -100,11 +100,11 @@ parts list). No in-world label or HUD kicker carries a number.
 ## Experience structure: six acts, 23 screens
 
 - **Act I: The Empty Lot** (1-3) title, the problem, the BOM idea
-- **Act II: The Line** (4-10) head office, intake, cells, catalog, foundry,
+- **Act II: The Line** (4-10) Head Office, intake, cells, catalog, foundry,
   the line, the loop
 - **Act III: On & Under the Floor** (11-16) occupants, the connected dive,
   toolkits, pattern shop, pipes, warehouse
-- **Act IV: Beyond One Plant** (17-18) the marketplace, the structure itself
+- **Act IV: Beyond One Plant** (17-18) the Catalog Marketplace, the structure itself
 - **Act V: The Invisible Systems** (19-20) governance, measurement
 - **Act VI: The Picture** (21-23) full plant orbit, Choose Your Build, close
 
@@ -147,7 +147,7 @@ rooms), 18 (four x-ray systems), and 22 (four profiles) have sub-steps.
 12. **The Dive.** The connected basement: color-coded trunks into the spine,
     risers into every room, conduits to cells and dock, pulses flowing up;
     basement walls and the machine room give it structure.
-13. **The Toolkits.** Racks tapped into the capability trunk; marketplace
+13. **The Toolkits.** Racks tapped into the capability trunk; Catalog Marketplace
     supply arrives later.
 14. **The Pattern Shop.** Master patterns on stands, the press stamping
     identical copies, cross-link to the toolkits.
@@ -155,7 +155,7 @@ rooms), 18 (four x-ray systems), and 22 (four profiles) have sub-steps.
     the ground, feeding the spine; the word "pipes" appears once in copy.
 16. **The Warehouse.** Shelves with provenance beacons, trunk into the
     spine, cross-links to pipes and capability.
-17. **The Marketplace.** Neutral-ground hub: drones to many plants, imports
+17. **The Catalog Marketplace.** Neutral-ground hub: drones to many plants, imports
     from the internet and vendors, a consume route to our catalog, and the
     underground supply main into the spine (foundry evolution 2: blocks come
     from here).
@@ -189,7 +189,7 @@ rooms), 18 (four x-ray systems), and 22 (four profiles) have sub-steps.
 - **Glow hierarchy.** The narrative subject glows; supporting structure
   carries deliberate low-emissive trim; background stays dim on purpose.
 - **Component births materialize in place** (short rise + fade with a glow
-  pulse). Nothing flies except the chosen workflow and the marketplace
+  pulse). Nothing flies except the chosen workflow and the Catalog Marketplace
   drones, which are the story.
 - **HUD chrome uses two corner radii** (8px compact, 16px content); chips
   are pills. FHD projection scale at 1700px+ (larger type, single-row dots,
@@ -245,7 +245,7 @@ rooms), 18 (four x-ray systems), and 22 (four profiles) have sub-steps.
   materializing pillars hiding behind the grass until birth finished).
   Births keep writing depth so buildings fade in solid, not as x-rays.
 - Profiles re-light via material modes and swap room occupancy sets; the
-  startup profile keeps the head office and catalog lit and one measurement
+  startup profile keeps the Head Office and catalog lit and one measurement
   thread alive.
 - Failure mode: without WebGL the overlay cards still step through.
 
@@ -257,7 +257,7 @@ rooms), 18 (four x-ray systems), and 22 (four profiles) have sub-steps.
   the **component catalog** (the org's catalog wall), the **Workflow
   Foundry** with **The Meta Workflow** ("the workflow that builds your
   workflows"), **workflow blocks**, **the Pattern Shop** (standards), and
-  **the Marketplace** (distribution; serves many factories; the head office
+  **the Catalog Marketplace** (distribution; serves many factories; the Head Office
   consumes from it). "Cell" is never repeated in labels; "roaming unit" is
   retired (use cloud agent). The agent layer naming gets a dedicated later
   pass with Roman.
