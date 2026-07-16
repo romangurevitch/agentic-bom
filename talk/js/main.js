@@ -298,9 +298,21 @@ function applyHudScale() {
 }
 applyHudScale();
 
+// P toggles browser fullscreen: while presenting, the tab bar and window
+// chrome cost real pixels on a projector. Escape (browser-native) exits.
+function toggleFullscreen() {
+  const el = document.documentElement;
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+  } else {
+    (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  }
+}
+
 window.addEventListener('keydown', e => {
   if (e.key === 'f' || e.key === 'F') { setRoam(!freeRoam); return; }
   if (e.key === 't' || e.key === 'T') { themeLight = !themeLight; applyTheme(); return; }
+  if (e.key === 'p' || e.key === 'P') { toggleFullscreen(); return; }
   if (freeRoam) {
     // any deck navigation drops back into the talk at the step you left
     if (e.key === 'Escape' || e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown'
