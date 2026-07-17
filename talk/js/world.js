@@ -1015,14 +1015,18 @@ export function buildWorld(scene) {
     const b = world._birth[name] !== undefined ? world._birth[name] : 1;
     // dim is the steady ghost/focus product; birth is a transient fade-in
     // and is kept apart so materializing groups keep writing depth
-    return { k: m * f * b, dim: m * f, hot: world._focus[name] === 1 && Object.keys(world._focus).length > 0 };
+    return { k: m * f * b, dim: m * f, f, hot: world._focus[name] === 1 && Object.keys(world._focus).length > 0 };
   }
   // ghost tint for the day theme: dimming by opacity alone works at night
   // (components read as lights turning off), but under the sun everything
   // stays lit, so dimmed components desaturate toward clay grey instead;
   // the shape stays readable as "considered, not built"
   const GHOST_TINT = new THREE.Color(0x9fabb6);
-  function applyToObj(obj, k, dim, hot) {
+  // night focus lift: on the x-ray screens the focused set can be plain
+  // dark steel (slab, columns, machine room) that vanishes against the
+  // black sky, so at night it gets a soft self-glow toward this cool white
+  const LIFT_TINT = new THREE.Color(0xdfeaf5);
+  function applyToObj(obj, k, dim, hot, f) {
     const m = obj.material;
     if (!m || !m.userData || m.userData.baseOpacity === undefined) return;
     if (world._light && k < 1) {
@@ -1031,10 +1035,24 @@ export function buildWorld(scene) {
       setFade(m, m.userData.baseOpacity * (0.14 + 0.86 * k));
     } else {
       if (m.userData.baseColor) m.color.copy(m.userData.baseColor);
-      setFade(m, m.userData.baseOpacity * Math.max(k, 0.001));
+      // additive holo lines carry no emissive, so the night focus squash
+      // has to land on their opacity or they outshine the focused set
+      const kk = !world._light && k < 1 && m.blending === THREE.AdditiveBlending ? k * f : k;
+      setFade(m, m.userData.baseOpacity * Math.max(kk, 0.001));
     }
-    if (m.emissiveIntensity !== undefined && m.userData.baseEmissive) {
-      m.emissiveIntensity = m.userData.baseEmissive * (k >= 1 ? (hot ? 1.35 : 1) : k);
+    if (m.emissiveIntensity !== undefined) {
+      if (m.userData.baseEmissive) {
+        // at night the focus factor squashes emissive twice (k * f): dimmed
+        // glow plus bloom otherwise stays louder than the focused structure
+        const e = k >= 1 ? (hot ? 1.35 : 1) : (world._light ? k : k * f);
+        m.emissiveIntensity = m.userData.baseEmissive * e;
+      } else if (hot && !world._light) {
+        if (!m.userData.baseColor) m.userData.baseColor = m.color.clone();
+        m.emissive.copy(m.userData.baseColor).lerp(LIFT_TINT, 0.5);
+        m.emissiveIntensity = 0.16 * Math.min(k, 1);
+      } else {
+        m.emissiveIntensity = 0;
+      }
     }
     // ghosted/x-rayed surfaces must stop writing depth: mis-sorted
     // translucent boxes otherwise cut holes through the scene that fill
@@ -1045,21 +1063,21 @@ export function buildWorld(scene) {
     if (obj.userData.baseCast === undefined) obj.userData.baseCast = obj.castShadow;
     obj.castShadow = obj.userData.baseCast && k === 1;
   }
-  function walkFactors(node, k, dim, hot) {
-    applyToObj(node, k, dim, hot);
+  function walkFactors(node, k, dim, hot, f) {
+    applyToObj(node, k, dim, hot, f);
     for (const child of node.children) {
       // nested named groups (bayIDE, pipeContext, govPipes...) resolve their
       // own factor and own their subtree
       if (child.userData && child.userData.name && groups[child.userData.name] === child) {
         applyFactors(child);
       } else {
-        walkFactors(child, k, dim, hot);
+        walkFactors(child, k, dim, hot, f);
       }
     }
   }
   function applyFactors(group) {
-    const { k, dim, hot } = factorOf(group.userData.name);
-    walkFactors(group, k, dim, hot);
+    const { k, dim, hot, f } = factorOf(group.userData.name);
+    walkFactors(group, k, dim, hot, f);
   }
   world._applyFactors = applyFactors;
   world._factorK = name => factorOf(name).k;
@@ -1158,10 +1176,13 @@ export function buildWorld(scene) {
   ground.position.y = GROUND_Y;
   ground.receiveShadow = true;
   lot.add(ground);
-  // paved lot the plant stands on (fills the gap up to the basement slab)
+  // paved slab the plant stands on (fills the gap up to the basement slab);
+  // its own group so screen 18's x-ray can light the slab without dragging
+  // the grass and dust along: scenery dims like everything else there
+  const pave = reg('pave', 1);
   const paveMat = mat(0x232a31, { rough: 0.85, metal: 0.08 });
   paveMat.roughnessMap = noiseRoughness();
-  lot.add(rbox(84, 1.7, 62, paveMat, 0, LOT_TOP - 0.85, -2, 0.3));
+  pave.add(rbox(84, 1.7, 62, paveMat, 0, LOT_TOP - 0.85, -2, 0.3));
 
   const dustGeo = new THREE.BufferGeometry();
   const dustCount = 350;
@@ -3106,7 +3127,7 @@ export function buildWorld(scene) {
   // ---- screen 18: the infrastructure IS the structure (x-ray) ----
   const infraTags = reg('infraTags', 18);
   const XRAY = [
-    { set: ['shell', 'campus', 'lot', 'infraTags'], tag: 'Compute & hosting · the slab and columns', pos: [0, 15, -2] },
+    { set: ['shell', 'campus', 'pave', 'infraTags'], tag: 'Compute & hosting · the slab and columns', pos: [0, 15, -2] },
     { set: ['beltLine', 'loopBelt', 'dock', 'infraTags'], tag: 'CI/CD pipelines · the belts themselves', pos: [0, 6.5, 8] },
     { set: ['machineRoom', 'infraTags'], tag: 'Agent runtime · the machine room', pos: [22, -3, 9] },
     { set: ['basementNet', 'infraTags'], tag: 'Data pipeline · the wires and trunks', pos: [0, -2.5, -2] },
