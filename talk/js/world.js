@@ -2146,8 +2146,11 @@ export function buildWorld(scene) {
         const fade = sg.fadeOut && k > 0.6 ? (1 - k) / 0.4 : 1;
         if (sg.fadeOut) fadeJourney(j, Math.max(fade, 0));
         // each shipped product launches a firework from the ramp to
-        // celebrate; skipped while the journeys are ghosted or focus-dimmed
-        if (sg.fadeOut && !j.fw && k >= 0.15 && world._factorK('journeys') === 1) {
+        // celebrate, but only where it cannot upstage a point being made:
+        // free roam and the closing screen. Also skipped while the journeys
+        // are ghosted or focus-dimmed.
+        if (sg.fadeOut && !j.fw && k >= 0.15 && world._factorK('journeys') === 1
+          && (world.roam || world.currentScreen === 23)) {
           j.fw = true;
           launchFirework(j.grp.position.x, j.grp.position.y + 0.6, j.grp.position.z);
         }
