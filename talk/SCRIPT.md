@@ -23,13 +23,13 @@ speaker-notes strip (`N` key), step-synced.
 ### 3. The Idea: a Bill of Materials
 - Manufacturing solved this a century ago with the Bill of Materials. Every
   part named, how parts compose, what is load-bearing.
-- Here is the whole agentic SDLC on one page. It looks complex. That is
-  exactly the point. You cannot hold your org against a list you have never
-  seen.
+- Here is the outline of a Bill of Materials for the agentic SDLC. The full
+  schema is bigger than a slide; this sheet carries the shape of it. You
+  cannot hold your org against a list you have never seen.
 - Every component keeps one color for the rest of the talk. The labels, the
   dots at the bottom right, the full plant at the end; the colors are the map.
-- The rest of the talk breaks this page apart, piece by piece. Not a vendor
-  pitch, not a maturity model.
+- The rest of the talk assembles the real picture, piece by piece. Not a
+  vendor pitch, not a maturity model.
 
 ## Act II: The Line
 
@@ -54,7 +54,7 @@ speaker-notes strip (`N` key), step-synced.
 - Read the labels. A Sev-2, an NPS dip, a CPS 230 update. Real inputs,
   arriving at a steady pace.
 - And each input starts a PRODUCT. A base plate on the belt. Every layer it
-  passes will add a piece. By the dock it will be a whole thing.
+  passes will add a piece. By the dock it will be a finished product.
 
 ### 6. Experience: Three Ways In
 - The collector belt feeds three cells, three very different ways in. Look at
@@ -90,15 +90,15 @@ speaker-notes strip (`N` key), step-synced.
   and work that cycles back.
 - Same catalog blocks. Visibly different shapes. That is the point of the
   foundry: each team’s workflow is assembled and owned on purpose, instead of
-  accreting by accident.
-- (Press) the Head Office chooses one for our factory; it flies down from the
+  growing by accident.
+- (Press) The Head Office chooses one for our factory; it flies down from the
   top level and lays itself out where our line will stand.
 - Because an agent can only drive a workflow that is explicitly described.
   Next, watch it become the line.
 
 ### 9. The Line, Built from the Chosen Workflow
-- Back at our factory. The chosen workflow is laid out on the floor, and each
-  block becomes a station ROOM. (One per press.)
+- Back at our factory. The chosen workflow is laid out on the floor, and one
+  press at a time, each block becomes a station ROOM.
 - Define: intent and acceptance criteria, machine-readable enough to verify
   against.
 - Design: architecture, ADRs, patterns from a catalog. Build: implementation
@@ -128,8 +128,8 @@ speaker-notes strip (`N` key), step-synced.
   unattended.
 - Some rooms are mixed. Design, Verify, and Measure, where a human signs off
   with an agent beside them. Decision rules, made visible.
-- On the open floor, cloud agents roam, and specialists (reviewer, evaluator)
-  compose into flows.
+- On the open floor, cloud agents roam, and specialist agents like reviewers
+  and evaluators compose into flows.
 - The people-to-agent mix per room is a CHOICE, set by workflow type and
   maturity, not an accident.
 
@@ -151,7 +151,7 @@ speaker-notes strip (`N` key), step-synced.
   sync with the Catalog Marketplace later; hold that thought.
 
 ### 14. The Pattern Shop: Standards & Patterns
-- How good looks. The nouns. This is the Pattern Shop, where the master
+- What good looks like. The nouns. This is the Pattern Shop, where the master
   patterns live.
 - Four masters on stands: code templates, deployment templates, architecture
   patterns, evaluation criteria. The press stamps identical copies; everything
@@ -175,8 +175,8 @@ speaker-notes strip (`N` key), step-synced.
 - Code and architecture truth, internal knowledge bases, process and
   standards, bounded external docs.
 - Every shelf has provenance and freshness labels.
-- And see the cross-links. Knowledge feeds the pipes and the toolkits; answer
-  what is true and current once, not per project.
+- And see the cross-links. Knowledge feeds the pipes and the toolkits, so what
+  is true and current gets answered once, not once per project.
 
 ## Act IV: Beyond One Plant
 
@@ -203,7 +203,7 @@ speaker-notes strip (`N` key), step-synced.
 - Agent runtime: the machine room in the basement.
 - Data pipeline: the wires and trunks carrying every signal.
 - The BOM claims existing infrastructure; it does not replace it. If a plan
-  starts with first-we-replatform, be suspicious.
+  starts with "first we replatform", be suspicious.
 
 ## Act V: The Invisible Systems
 
@@ -225,7 +225,7 @@ speaker-notes strip (`N` key), step-synced.
   board, then the feed line runs back to intake.)
 - Adoption: who uses which components, with what friction.
 - Impact: cycle time, quality, cost. Outcome validation against the outcome
-  definition. Demand: where autonomy pays vs where a human is cheaper.
+  definition. Demand: where autonomy pays versus where a human is cheaper.
 - The line back to the intake gate is the whole thesis. Without it,
   AI-assisted delivery. With it, self-continuous.
 
@@ -259,13 +259,14 @@ speaker-notes strip (`N` key), step-synced.
 - The BOM is the same for everyone; the build is not, and neither is the mix
   of people and agents.
 
-### 23. Close
-- You have just watched the whole picture assemble. Here is what to take
-  home.
-- Take the parts list home. Hold your org against it. Decide each component’s
-  depth deliberately, even if the decision is one file.
-- And compose your Meta Workflow deliberately. Decide how your teams’
-  workflows are built instead of letting them accrete.
-- That is the difference between adopting tools and rebuilding the SDLC around
-  agentic capability.
-- (Thanks; name, Mantel, LinkedIn. Questions.)
+### 23. Close (Build Your Own Factory)
+- We opened on an empty lot and said we would build a factory. We did. Yours
+  is next.
+- Adopting tools is not building a factory. The factory is your SDLC itself,
+  rebuilt around agents.
+- Take the parts list home. Hold your org against it. Give every component a
+  deliberate depth, even if the decision is one file.
+- And compose your Meta Workflow on purpose. Decide how your teams’ workflows
+  are built instead of letting them grow by accident.
+- Thank you. I am Roman Gurevitch, Principal Software Engineer at Mantel. The
+  QR code on the card goes to my LinkedIn; scan it and connect. Questions.

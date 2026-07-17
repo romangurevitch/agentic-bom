@@ -2054,6 +2054,7 @@ export function buildWorld(scene) {
     j.seg = 0;
     j.segT = 0;
     j.fade = 1;
+    j.fw = false;
     j.mode = 'run';
     j.grp.visible = true;
     j.grp.position.copy(s[0].from);
@@ -2144,6 +2145,12 @@ export function buildWorld(scene) {
         if (j.word.visible) j.word.position.set(j.grp.position.x, j.grp.position.y + 2.4, j.grp.position.z);
         const fade = sg.fadeOut && k > 0.6 ? (1 - k) / 0.4 : 1;
         if (sg.fadeOut) fadeJourney(j, Math.max(fade, 0));
+        // each shipped product launches a firework from the ramp to
+        // celebrate; skipped while the journeys are ghosted or focus-dimmed
+        if (sg.fadeOut && !j.fw && k >= 0.15 && world._factorK('journeys') === 1) {
+          j.fw = true;
+          launchFirework(j.grp.position.x, j.grp.position.y + 0.6, j.grp.position.z);
+        }
         if (j.segT >= sg.dur) {
           j.segT = 0;
           const next = j.segs[j.seg + 1];
@@ -2164,6 +2171,177 @@ export function buildWorld(scene) {
             j.seg += 1;
           }
         }
+      }
+    },
+  });
+
+  // ---- fireworks over the outcome dock ----
+  // each shipped product launches a rocket from the exit ramp: a comet head
+  // with a short ember trail climbs, breaks into an expanding one-color
+  // shell of sparks that blooms under hard air drag and drifts down
+  // twinkling, and a golden crackle pops at the heart of the break. Owned by
+  // the journeys group so everything inherits its visibility. Blending is
+  // chosen at spawn time per theme: additive sparks glow at night but sink
+  // into the daylight sky. The per-spark fade and twinkle run through vertex
+  // colors, which only reads as light against the night sky, so daylight
+  // falls back to a plain opacity fade.
+  const rockets = [];
+  const bursts = [];
+  const BURST_COLORS = [COLORS.outcome, COLORS.input, COLORS.agent, COLORS.dist, COLORS.int];
+  // a soft radial glow sprite: bare Points render as hard squares
+  const sparkTex = (() => {
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 64;
+    const x = cv.getContext('2d');
+    const g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.35, 'rgba(255,255,255,0.8)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g;
+    x.fillRect(0, 0, 64, 64);
+    return new THREE.CanvasTexture(cv);
+  })();
+  function sparkMaterial(size) {
+    const m = new THREE.PointsMaterial({
+      size, map: sparkTex, vertexColors: true, transparent: true, opacity: 1,
+      blending: world._light ? THREE.NormalBlending : THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    m.userData = { baseOpacity: 1, baseEmissive: 0 };
+    return m;
+  }
+  // sparks move every frame but their bounding spheres are computed once at
+  // spawn, so stale culling would blank whole bursts; skip the frustum test
+  function sparkPoints(geo, size) {
+    const pts = new THREE.Points(geo, sparkMaterial(size));
+    pts.frustumCulled = false;
+    pts.castShadow = false;
+    return pts;
+  }
+  function launchFirework(bx, by, bz) {
+    world._fwCount = (world._fwCount || 0) + 1; // debug: lets tooling await a launch
+    const TRAIL = 8;
+    const pos = new Float32Array((TRAIL + 1) * 3);
+    const col = new Float32Array((TRAIL + 1) * 3);
+    const c = new THREE.Color(0xffe2a8);
+    for (let i = 0; i <= TRAIL; i++) {
+      pos[i * 3] = bx; pos[i * 3 + 1] = by; pos[i * 3 + 2] = bz;
+      const f = i === 0 ? 1.3 : 0.55 * (1 - i / (TRAIL + 1));
+      col[i * 3] = c.r * f; col[i * 3 + 1] = c.g * f; col[i * 3 + 2] = c.b * f;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    const pts = sparkPoints(geo, 0.45);
+    journeyGroup.add(pts);
+    rockets.push({
+      pts,
+      p: new THREE.Vector3(bx, by, bz),
+      v: new THREE.Vector3((Math.random() - 0.5) * 2.4, 15 + Math.random() * 3, (Math.random() - 0.5) * 2.4),
+      t: 0,
+      fuse: 0.72 + Math.random() * 0.22,
+      color: BURST_COLORS[(Math.random() * BURST_COLORS.length) | 0],
+    });
+  }
+  function explode(center, colorHex, opts = {}) {
+    const n = opts.n || 300;
+    const speed = opts.speed || 17;
+    const dur = opts.dur || 2.6;
+    const pos = new Float32Array(n * 3);
+    const base = new Float32Array(n * 3);
+    const vel = [];
+    const life = new Float32Array(n);
+    const phase = new Float32Array(n);
+    const c = new THREE.Color();
+    const white = new THREE.Color(0xffffff);
+    for (let i = 0; i < n; i++) {
+      pos[i * 3] = center.x; pos[i * 3 + 1] = center.y; pos[i * 3 + 2] = center.z;
+      // uniform directions at near-equal speed: a shell, not a blob
+      const th = Math.random() * Math.PI * 2;
+      const u = 2 * Math.random() - 1;
+      const r = Math.sqrt(1 - u * u);
+      const sp = speed * (0.82 + Math.random() * 0.36);
+      vel.push(new THREE.Vector3(r * Math.cos(th) * sp, u * sp, r * Math.sin(th) * sp));
+      // every fifth spark burns white for contrast inside the single hue
+      c.set(colorHex);
+      if (i % 5 === 0) c.lerp(white, 0.75);
+      if (world._light) c.multiplyScalar(0.85);
+      base[i * 3] = c.r; base[i * 3 + 1] = c.g; base[i * 3 + 2] = c.b;
+      life[i] = dur * (0.55 + Math.random() * 0.45);
+      phase[i] = Math.random() * Math.PI * 2;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(base.slice(), 3));
+    const pts = sparkPoints(geo, opts.size || 0.75);
+    journeyGroup.add(pts);
+    bursts.push({
+      pts, vel, base, life, phase, t: 0, dur,
+      center: center.clone(), light: world._light, crackle: opts.crackle !== false,
+    });
+  }
+  function retire(list, i, group) {
+    const o = list[i];
+    group.remove(o.pts);
+    o.pts.geometry.dispose();
+    o.pts.material.dispose();
+    list.splice(i, 1);
+  }
+  animators.push({
+    update(t, dt) {
+      for (let i = rockets.length - 1; i >= 0; i--) {
+        const r = rockets[i];
+        r.t += dt;
+        r.v.y -= 4.5 * dt;
+        r.v.multiplyScalar(Math.max(0, 1 - 0.5 * dt));
+        r.p.addScaledVector(r.v, dt);
+        const arr = r.pts.geometry.attributes.position.array;
+        // ember trail: each point takes the previous one's place
+        for (let k = arr.length / 3 - 1; k >= 1; k--) {
+          arr[k * 3] = arr[(k - 1) * 3];
+          arr[k * 3 + 1] = arr[(k - 1) * 3 + 1];
+          arr[k * 3 + 2] = arr[(k - 1) * 3 + 2];
+        }
+        arr[0] = r.p.x; arr[1] = r.p.y; arr[2] = r.p.z;
+        r.pts.geometry.attributes.position.needsUpdate = true;
+        if (r.t >= r.fuse) {
+          const at = r.p.clone();
+          const hue = r.color;
+          retire(rockets, i, journeyGroup);
+          explode(at, hue);
+        }
+      }
+      for (let i = bursts.length - 1; i >= 0; i--) {
+        const b = bursts[i];
+        b.t += dt;
+        // the crackle: a short golden glitter pop at the heart of the break
+        if (b.crackle && b.t >= 0.35) {
+          b.crackle = false;
+          explode(b.center, 0xffd98c, { n: 110, speed: 4.5, dur: 1.6, size: 0.4, crackle: false });
+        }
+        const arr = b.pts.geometry.attributes.position.array;
+        const colA = b.pts.geometry.attributes.color.array;
+        for (let k = 0; k < b.vel.length; k++) {
+          const v = b.vel[k];
+          v.y -= 4.2 * dt;
+          v.multiplyScalar(Math.max(0, 1 - 2.6 * dt));
+          arr[k * 3] += v.x * dt;
+          arr[k * 3 + 1] += v.y * dt;
+          arr[k * 3 + 2] += v.z * dt;
+          if (!b.light) {
+            let e = Math.max(0, 1 - b.t / b.life[k]);
+            if (e < 0.6) e *= 0.55 + 0.45 * Math.sin(t * 26 + b.phase[k]);
+            // the break flash, then a sustained glow hot enough to trip bloom
+            e *= b.t < 0.16 ? 2.6 : 1.5;
+            colA[k * 3] = b.base[k * 3] * e;
+            colA[k * 3 + 1] = b.base[k * 3 + 1] * e;
+            colA[k * 3 + 2] = b.base[k * 3 + 2] * e;
+          }
+        }
+        b.pts.geometry.attributes.position.needsUpdate = true;
+        if (!b.light) b.pts.geometry.attributes.color.needsUpdate = true;
+        else b.pts.material.opacity = Math.max(0, 1 - b.t / b.dur);
+        if (b.t >= b.dur) retire(bursts, i, journeyGroup);
       }
     },
   });
@@ -3118,11 +3296,6 @@ export function buildWorld(scene) {
   const dockLabel = lab(makeLabel('Outcome dock', css(COLORS.outcome), 0.95), [], { band: true, group: 'dock' });
   dockLabel.position.set(0, 7.6, 15.6);
   dock.add(dockLabel);
-
-  const product = reg('product', 23);
-  const prodLbl = lab(makeLabel('a delivered outcome the org can trust', css(COLORS.outcome), 0.95), [23]);
-  prodLbl.position.set(0, 4.6, 22);
-  product.add(prodLbl);
 
   // ---- screen 18: the infrastructure IS the structure (x-ray) ----
   const infraTags = reg('infraTags', 18);
