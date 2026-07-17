@@ -923,11 +923,24 @@ export function buildWorld(scene) {
   // and vignette retune in main.js, HUD chrome in CSS.
   world.setTheme = light => {
     world._light = light;
-    const sky = light ? 0xd9e7f7 : COLORS.bg;
+    // day background/fog match the sky dome's horizon color, so distant
+    // geometry fades into the horizon band instead of a mismatched tint
+    const sky = light ? 0xeef3f9 : COLORS.bg;
     scene.background.set(sky);
     scene.fog.color.set(sky);
-    // a clear sunny day: barely-there aerial perspective, not mist
-    scene.fog.density = light ? 0.0005 : 0.0032;
+    // a clear sunny day: gentle aerial perspective that settles the hazy
+    // hill ridges into the distance without misting the plant itself
+    scene.fog.density = light ? 0.0007 : 0.0032;
+    // both themes share the environment; only the palette swaps. Night keeps
+    // a faint glow band above the ridges so the horizon still reads.
+    skyU.uTop.value.set(light ? 0x5798dd : 0x04060a);
+    skyU.uHorizon.value.set(light ? 0xeef3f9 : 0x131a25);
+    skyU.uSunColor.value.set(light ? 0xfff3d2 : 0x000000);
+    hillFarMat.color.set(light ? 0xbfd3e2 : 0x0c1117);
+    hillNearMat.color.set(light ? 0xa3bf94 : 0x0b120d);
+    skirtMat.color.set(light ? 0x74a457 : 0x0a0d0a);
+    hazeMat.color.set(light ? 0xffffff : 0x0b0d10);
+    cloudGroup.visible = light;
     ambient.color.set(light ? 0xffffff : 0xbfd0e0);
     ambient.intensity = light ? 0.5 : 0.22;
     hemi.color.set(light ? 0xdfeaf5 : 0x8fb4d8);
@@ -1171,7 +1184,10 @@ export function buildWorld(scene) {
   const grassMat = mat(0xffffff, { rough: 0.95, metal: 0.0 });
   grassMat.map = grassTexture();
   grassMat.roughnessMap = noiseRoughness();
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(420, 340), grassMat);
+  // a disc, not a sheet: a rectangle's straight edges and corners read as a
+  // floating platform against the horizon; a circle melts into the radial
+  // distance haze with no seam direction to catch
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(240, 72), grassMat);
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = GROUND_Y;
   ground.receiveShadow = true;
@@ -1205,6 +1221,149 @@ export function buildWorld(scene) {
     update(t) {
       dust.rotation.y = t * 0.008;
       dust.position.y = Math.sin(t * 0.15) * 0.8;
+    },
+  });
+
+  // ---- environment: sky dome, horizon ridges, ground skirt, clouds ----
+  // One flat clear color reads as a void and the lawn used to end in a hard
+  // edge against it. Both themes now share the same environment: a gradient
+  // sky dome (day carries a sun matched to the key light; night a faint glow
+  // band above the ridge line), two hill ridges behind the far plants, a
+  // ground skirt out to those ridges, and a haze disc that melts the lawn
+  // edge into the distance. Clouds drift in daylight only. setTheme swaps
+  // the palette. Tone mapping happens in OutputPass, so day colors are
+  // authored a step brighter than they should read.
+  const env = new THREE.Group();
+  scene.add(env);
+  const skyU = {
+    uTop: { value: new THREE.Color(0x5798dd) },
+    uHorizon: { value: new THREE.Color(0xeef3f9) },
+    uSunColor: { value: new THREE.Color(0xfff3d2) },
+    uSunDir: { value: new THREE.Vector3(42, 70, 30).normalize() },
+  };
+  const skyDome = new THREE.Mesh(
+    new THREE.SphereGeometry(700, 48, 24),
+    new THREE.ShaderMaterial({
+      side: THREE.BackSide, depthWrite: false, fog: false,
+      uniforms: skyU,
+      vertexShader: 'varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+      fragmentShader: `varying vec3 vDir;
+        uniform vec3 uTop, uHorizon, uSunColor, uSunDir;
+        void main(){
+          // compress the ramp so the top color arrives just above the ridge
+          // line; most deck cameras only frame the lowest third of the sky
+          float h = clamp(vDir.y * 2.2, 0.0, 1.0);
+          // smoothstep over a softened pow: no crease at the ridge line and
+          // no hard knee at the zenith
+          float m = smoothstep(0.0, 1.0, pow(h, 0.75));
+          vec3 col = mix(uHorizon, uTop, m);
+          float d = clamp(dot(normalize(vDir), uSunDir), 0.0, 1.0);
+          col += uSunColor * (pow(d, 900.0) + pow(d, 10.0) * 0.22);
+          gl_FragColor = vec4(col, 1.0);
+        }`,
+    }),
+  );
+  skyDome.frustumCulled = false;
+  env.add(skyDome);
+  // rolling ridge silhouettes: a ring whose top edge is layered sine noise.
+  // Unlit and fog-tinted, so they sit back as aerial perspective.
+  function hillRing(radius, base, amp, seed) {
+    const SEG = 128;
+    const positions = [];
+    const idx = [];
+    for (let i = 0; i <= SEG; i++) {
+      const a = (i / SEG) * Math.PI * 2;
+      // integer wave counts only: fractional frequencies do not close the
+      // loop and leave a cliff where the ring meets itself (due east)
+      const h = base
+        + amp * (0.5 + 0.5 * Math.sin(a * 3 + seed))
+        + amp * 0.6 * (0.5 + 0.5 * Math.sin(a * 7 + seed * 2.7))
+        + amp * 0.35 * (0.5 + 0.5 * Math.sin(a * 13 + seed * 5.1));
+      const x = Math.cos(a) * radius;
+      const z = Math.sin(a) * radius;
+      positions.push(x, GROUND_Y - 30, z, x, GROUND_Y + h, z);
+    }
+    for (let i = 0; i < SEG; i++) {
+      const b = i * 2;
+      idx.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    g.setIndex(idx);
+    const mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+    env.add(mesh);
+    return mesh.material;
+  }
+  const hillFarMat = hillRing(600, 12, 30, 1.3);
+  const hillNearMat = hillRing(430, 5, 16, 4.1);
+  // the ground past the lawn disc, running out to the ridges
+  const skirtMat = new THREE.MeshBasicMaterial({ color: 0x74a457 });
+  const skirt = new THREE.Mesh(new THREE.CircleGeometry(640, 64), skirtMat);
+  skirt.rotation.x = -Math.PI / 2;
+  skirt.position.y = GROUND_Y - 0.5;
+  env.add(skirt);
+  // distance haze on the ground: transparent over the plant, thickening
+  // outward so the lawn edge dissolves instead of cutting. The texture is
+  // white; the material color tints it per theme.
+  const hazeTex = (() => {
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 512;
+    const x = cv.getContext('2d');
+    const g = x.createRadialGradient(256, 256, 0, 256, 256, 256);
+    g.addColorStop(0, 'rgba(255,255,255,0)');
+    g.addColorStop(0.2, 'rgba(255,255,255,0)');
+    g.addColorStop(0.45, 'rgba(255,255,255,0.34)');
+    g.addColorStop(1, 'rgba(255,255,255,0.85)');
+    x.fillStyle = g;
+    x.fillRect(0, 0, 512, 512);
+    return new THREE.CanvasTexture(cv);
+  })();
+  const hazeMat = new THREE.MeshBasicMaterial({ map: hazeTex, transparent: true, depthWrite: false, fog: false });
+  const haze = new THREE.Mesh(new THREE.PlaneGeometry(1300, 1300), hazeMat);
+  haze.rotation.x = -Math.PI / 2;
+  haze.position.y = GROUND_Y + 0.12;
+  haze.renderOrder = -2;
+  env.add(haze);
+  // stylized cumulus: overlapping soft blobs on one sprite texture
+  const cloudTex = (() => {
+    const cv = document.createElement('canvas');
+    cv.width = 256;
+    cv.height = 128;
+    const x = cv.getContext('2d');
+    const blobs = [[70, 84, 42], [120, 70, 52], [176, 82, 44], [96, 92, 34], [150, 96, 38], [205, 95, 30]];
+    for (const [bx, by, br] of blobs) {
+      const g = x.createRadialGradient(bx, by, 0, bx, by, br);
+      g.addColorStop(0, 'rgba(255,255,255,0.85)');
+      g.addColorStop(0.7, 'rgba(255,255,255,0.35)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      x.fillStyle = g;
+      x.fillRect(0, 0, 256, 128);
+    }
+    return new THREE.CanvasTexture(cv);
+  })();
+  const cloudGroup = new THREE.Group();
+  env.add(cloudGroup);
+  const cloudField = [];
+  for (let i = 0; i < 10; i++) {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: cloudTex, color: 0xf4f8fc, transparent: true,
+      opacity: 0.55 + Math.random() * 0.3, depthWrite: false, fog: false,
+    }));
+    const a = (i / 10) * Math.PI * 2 + Math.random();
+    const r = 180 + Math.random() * 320;
+    s.position.set(Math.cos(a) * r, 45 + Math.random() * 65, Math.sin(a) * r);
+    const w = 60 + Math.random() * 70;
+    s.scale.set(w, w * 0.38, 1);
+    cloudGroup.add(s);
+    cloudField.push({ s, sp: 0.8 + Math.random() * 0.9 });
+  }
+  animators.push({
+    update(t, dt) {
+      if (!cloudGroup.visible) return;
+      for (const c of cloudField) {
+        c.s.position.x += c.sp * dt;
+        if (c.s.position.x > 620) c.s.position.x = -620;
+      }
     },
   });
 
@@ -1893,12 +2052,17 @@ export function buildWorld(scene) {
       }
     },
   });
-  // the line wears its own nameplate: a lit sign leaning on the belt's
-  // front rail, in place of the old floating label
+  // the line wears its nameplate on the belt's front rail, raised a touch
+  // more upright than it used to be so it still reads at eye level in free
+  // roam. The far orbit screens get a floating band label instead: from up
+  // there any rail plate turns edge-on.
   const linePlate = makePlate('Self-Continuous SDLC', COLORS.sdlc, 14, 1.3);
-  linePlate.position.set(0, 1.1, 1.98);
-  linePlate.rotation.x = -0.55;
+  linePlate.position.set(0, 1.25, 2.05);
+  linePlate.rotation.x = -0.35;
   line.add(linePlate);
+  const lineBand = lab(makeLabel('Self-Continuous SDLC · the line', css(COLORS.sdlc), 1.1), [], { band: true, group: 'line' });
+  lineBand.position.set(0, 8, 0);
+  line.add(lineBand);
   // who occupies each room, per profile: P person, A agent, . empty
   const OCCUPANCY = {
     full: ['PP', 'PA', 'AA', 'PA', 'AA', 'AA', 'PA'],
@@ -2352,7 +2516,9 @@ export function buildWorld(scene) {
   // ---- the workforce on the open floor (screen 11) ----
   const robots = reg('robots', 11);
   const floorBots = [
-    ['specialist · reviewer', STATION_X(3) + 2.6, 2.6],
+    // the reviewer keeps clear of the line's nameplate (it spans x -7..7 on
+    // the front rail) or it stands right in front of the text
+    ['specialist · reviewer', STATION_X(4) + 2.6, 2.8],
     ['specialist · evaluator', STATION_X(6) - 2.6, 2.6],
   ];
   floorBots.forEach(([name, x, z], i) => {
@@ -2388,7 +2554,9 @@ export function buildWorld(scene) {
         r.bot.g.position.x = r.cx + Math.sin(t * 0.4 + r.ph) * 5;
         r.bot.g.position.z = r.cz + Math.cos(t * 0.32 + r.ph) * r.az;
         r.bot.g.rotation.y = Math.atan2(Math.cos(t * 0.4 + r.ph), -Math.sin(t * 0.32 + r.ph));
-        r.lbl.position.set(r.bot.g.position.x, 3.9, r.bot.g.position.z);
+        // label rides just over the head: any higher and it sweeps through
+        // the sight line to the line's nameplate as the bot roams
+        r.lbl.position.set(r.bot.g.position.x, 3.1, r.bot.g.position.z);
       }
     },
   });

@@ -36,6 +36,25 @@ let userTheta = 0;
 let userPhi = 0;
 let userZoom = 1;
 
+// final dither: the whole post chain runs in HalfFloat, but the canvas is
+// 8-bit, so slow gradients (sky dome, fog, vignette, ground haze) quantize
+// into visible bands at the very last write. One step of screen-space noise
+// in display space, added after tone mapping, breaks the bands invisibly.
+const DitherShader = {
+  uniforms: { tDiffuse: { value: null } },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+  fragmentShader: `
+    uniform sampler2D tDiffuse;
+    varying vec2 vUv;
+    void main() {
+      vec4 c = texture2D(tDiffuse, vUv);
+      float n = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
+      gl_FragColor = vec4(c.rgb + (n - 0.5) * (1.5 / 255.0), c.a);
+    }`,
+};
+
 // ---------- boot ----------
 
 try {
@@ -75,6 +94,7 @@ if (renderer) {
   vignette.uniforms.darkness.value = 1.1;
   composer.addPass(vignette);
   composer.addPass(new OutputPass());
+  composer.addPass(new ShaderPass(DitherShader));
 
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
