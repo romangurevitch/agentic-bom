@@ -2,6 +2,9 @@
 
 **Live: [romangurevitch.github.io/agentic-bom](https://romangurevitch.github.io/agentic-bom/)**
 
+> Open the live deck on a computer. The 3D factory is not supported on
+> phones.
+
 A 3D, game-styled conference presentation built in Three.js. An agentic
 software factory assembles itself live across 23 keyboard-driven screens
 (six acts), ending in a full-plant orbit and a "choose your build" depth

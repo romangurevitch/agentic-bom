@@ -20,7 +20,7 @@ export const STEPS = [
   {
     act: 1, accent: C.know, kicker: 'Welcome',
     title: 'We are going to build a factory',
-    qr: { img: 'assets/qr.svg', title: 'Scan to open this deck', url: 'romangurevitch.github.io/agentic-bom' },
+    qr: { img: 'assets/qr.svg', title: 'Scan for the repo & deck', url: 'github.com/romangurevitch/agentic-bom' },
     bullets: [
       'A Bill of Materials for the agentic SDLC, assembled live',
       'You leave with a parts list to hold your own org against',
