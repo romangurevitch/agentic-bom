@@ -1610,8 +1610,10 @@ export function buildWorld(scene) {
   foundryG.add(fPlateE);
 
   // ---- The Meta Workflow (screen 8): three candidate topologies assemble
-  // in place on the foundry floor; the chosen one flies to the line ----
-  const metaLines = reg('metaLines', 8, 10);
+  // in place on the foundry floor; the chosen one flies to the line. The
+  // two that stay keep working the foundry floor for the rest of the talk
+  // and in free roam: the foundry does not go quiet after its screen. ----
+  const metaLines = reg('metaLines', 8);
   const BLOCK_COLS = [COLORS.input, COLORS.exp, COLORS.agent, COLORS.std, COLORS.int, COLORS.know, COLORS.sdlc, COLORS.cap];
   function candBlock(color, big = false) {
     const s = big ? 1.45 : 1.2;
@@ -1742,25 +1744,60 @@ export function buildWorld(scene) {
         }
       });
     } else if (screen === 9) {
-      // only the chosen workflow remains: ghost slots the rooms rise into
+      // the chosen workflow becomes ghost slots the rooms rise into; the
+      // two unchosen ones stay on display in the foundry
       cands.forEach((cd, ci) => {
-        cd.lbl.visible = false;
-        cd.arrows.forEach(ar => { ar.visible = false; });
-        cd.blocks.forEach((bl, bi) => {
-          const on = ci === 0 && bl.spread && bi >= stationCount;
-          bl.m.visible = on;
-          bl.e.visible = on;
-          if (bl.ring) bl.ring.visible = false;
-          if (bl.spread) {
-            bl.m.position.copy(bl.spread);
-            bl.e.position.copy(bl.spread);
-            bl.ft = 1;
-            bl.goal = 1;
-          }
-        });
+        cd.lbl.visible = ci !== 0;
+        if (ci === 0) {
+          cd.arrows.forEach(ar => { ar.visible = false; });
+          cd.blocks.forEach((bl, bi) => {
+            const on = bl.spread && bi >= stationCount;
+            bl.m.visible = on;
+            bl.e.visible = on;
+            if (bl.ring) bl.ring.visible = false;
+            if (bl.spread) {
+              bl.m.position.copy(bl.spread);
+              bl.e.position.copy(bl.spread);
+              bl.ft = 1;
+              bl.goal = 1;
+            }
+          });
+        } else {
+          restCand(cd);
+        }
+      });
+    } else {
+      // every other screen: our pick left the building, the other two keep
+      // working the foundry floor, floating name labels included
+      cands.forEach((cd, ci) => {
+        cd.lbl.visible = ci !== 0;
+        cd.assembling = false;
+        if (ci === 0) {
+          cd.arrows.forEach(ar => { ar.visible = false; });
+          cd.blocks.forEach(bl => {
+            bl.m.visible = false;
+            bl.e.visible = false;
+            if (bl.ring) bl.ring.visible = false;
+          });
+        } else {
+          restCand(cd);
+        }
       });
     }
   };
+  // an unchosen candidate at rest: fully assembled at its foundry home,
+  // faded only by the group's ghost/focus factor (screen 22 profiles)
+  function restCand(cd) {
+    cd.assembling = false;
+    candShow(cd, cd.blocks.length, true);
+    candOpacity(cd, world._factorK('metaLines'));
+    cd.blocks.forEach(bl => {
+      bl.m.position.copy(bl.home);
+      bl.e.position.copy(bl.home);
+      if (bl.ring) bl.ring.position.copy(bl.home);
+      bl.target = bl.home;
+    });
+  }
   animators.push({
     update(t, dt) {
       const k = 1 - Math.pow(0.02, dt);
@@ -3491,7 +3528,7 @@ export function buildWorld(scene) {
   // ---------- profiles (screen 22) ----------
   const PROFILE_TARGETS = [
     'intake', 'bays', 'bayIDE', 'bayPortal', 'bayAuto', 'controlRoom', 'metaRack',
-    'foundry', 'line', 'beltLine', 'loopBelt', 'robots', 'toolkits', 'patternShop',
+    'foundry', 'metaLines', 'line', 'beltLine', 'loopBelt', 'robots', 'toolkits', 'patternShop',
     'pipes', 'pipeContext', 'pipeAction', 'pipeObserve', 'warehouse', 'market',
     'machineRoom', 'basementNet', 'linkPatterns', 'linkPipesCap', 'linkKnow',
     'linkMarket', 'governance', 'govPipes', 'govAccess', 'govGates',
@@ -3504,7 +3541,7 @@ export function buildWorld(scene) {
     },
     scaleup: {
       on: ['intake', 'bays', 'bayIDE', 'bayPortal', 'bayAuto', 'controlRoom', 'metaRack',
-        'foundry', 'line', 'beltLine', 'loopBelt', 'robots', 'toolkits', 'patternShop',
+        'foundry', 'metaLines', 'line', 'beltLine', 'loopBelt', 'robots', 'toolkits', 'patternShop',
         'pipes', 'pipeContext', 'pipeAction', 'pipeObserve', 'warehouse', 'market',
         'machineRoom', 'basementNet', 'linkPatterns', 'linkPipesCap', 'linkKnow',
         'linkMarket', 'measurement', 'govPipes', 'dock', 'journeys'],
