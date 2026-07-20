@@ -134,7 +134,7 @@ export const STEPS = [
       'An agent can only drive a workflow that is explicitly described',
     ],
     substeps: 5,
-    subLabels: ['The foundry', 'Product team', 'Data team', 'Platform team', 'Choose one'],
+    subLabels: ['The Foundry', 'Product Team', 'Data Team', 'Platform Team', 'Choose One'],
     onSubstep: (world, sub) => world.setMetaState(8, sub),
     subCams: { 4: { pos: [40, 38, 26], target: [10, 7, -13] } },
     notes: [
@@ -295,7 +295,7 @@ export const STEPS = [
       'The BOM claims what you already own. It replaces nothing.',
     ],
     substeps: 4,
-    subLabels: ['Compute & hosting', 'CI/CD pipelines', 'Agent runtime', 'Data pipeline'],
+    subLabels: ['Compute & Hosting', 'CI/CD Pipelines', 'Agent Runtime', 'Data Pipeline'],
     chipMode: 'single',
     onSubstep: (world, sub) => world.setInfraFocus(sub),
     notes: [
@@ -314,7 +314,7 @@ export const STEPS = [
       'Embedded at every stage, not a checkpoint at the end; it is what lets you say yes to autonomy',
     ],
     substeps: 4,
-    subLabels: ['Access control', 'Quality gates', 'Decision rules', 'Audit'],
+    subLabels: ['Access Control', 'Quality Gates', 'Decision Rules', 'Audit'],
     chipMode: 'single',
     onSubstep: (world, sub) => world.setGovFocus(sub),
     subCams: {

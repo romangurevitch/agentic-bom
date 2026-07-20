@@ -1390,10 +1390,10 @@ export function buildWorld(scene) {
   // ---- 2. shifting ground: starter rigs on slowly drifting tiles ----
   const rigs = reg('rigs', 2, 4);
   const rigDefs = [
-    ['a coding agent', -16, 6],
-    ['a prompt library', -4, 12],
-    ['an MCP server', 9, 4],
-    ['a pilot', -3, -4],
+    ['A Coding Agent', -16, 6],
+    ['A Prompt Library', -4, 12],
+    ['An MCP Server', 9, 4],
+    ['A Pilot', -3, -4],
   ];
   const rigTiles = [];
   rigDefs.forEach(([name, hx, hz], i) => {
@@ -1527,10 +1527,10 @@ export function buildWorld(scene) {
   beacon(officeG, COLORS.life, OX, 12.0, OZ, 2.6);
   // the office wears its name on the roofline, on the faces the show
   // cameras see, in place of the old floating label
-  const crPlateS = makePlate('the Head Office', COLORS.life, 5.5, 1.0);
+  const crPlateS = makePlate('The Head Office', COLORS.life, 5.5, 1.0);
   crPlateS.position.set(OX, 11.2, OZ + 4.46);
   officeG.add(crPlateS);
-  const crPlateW = makePlate('the Head Office', COLORS.life, 5.5, 1.0);
+  const crPlateW = makePlate('The Head Office', COLORS.life, 5.5, 1.0);
   crPlateW.position.set(OX - 5.76, 11.2, OZ);
   crPlateW.rotation.y = -Math.PI / 2;
   officeG.add(crPlateW);
@@ -1596,15 +1596,15 @@ export function buildWorld(scene) {
   }
   // the roofline plates carry the name on screen 8; the banner only flies
   // for the full-plant and profile screens
-  const foundryLabel = lab(makeLabel('the Workflow Foundry · The Meta Workflow', css(COLORS.life), 0.95), [], { band: true, group: 'foundry' });
+  const foundryLabel = lab(makeLabel('The Workflow Foundry · The Meta Workflow', css(COLORS.life), 0.95), [], { band: true, group: 'foundry' });
   foundryLabel.position.set(FX, 9.6, FZ);
   foundryG.add(foundryLabel);
   // fixed signage stands ABOVE the roofline (a rooftop sign), so the roof
   // edge and trim never mask it from the show cameras or free roam
-  const fPlateS = makePlate('the Workflow Foundry', COLORS.life, 9, 1.5);
+  const fPlateS = makePlate('The Workflow Foundry', COLORS.life, 9, 1.5);
   fPlateS.position.set(FX, 8.7, FZ + 7.6);
   foundryG.add(fPlateS);
-  const fPlateE = makePlate('the Workflow Foundry', COLORS.life, 9, 1.5);
+  const fPlateE = makePlate('The Workflow Foundry', COLORS.life, 9, 1.5);
   fPlateE.position.set(FX + 13.1, 8.7, FZ);
   fPlateE.rotation.y = Math.PI / 2;
   foundryG.add(fPlateE);
@@ -1639,13 +1639,13 @@ export function buildWorld(scene) {
   }
   // topologies: local (dx, dz) block offsets, flow order; z runs 0..12
   const CAND_DEFS = [
-    { name: "product team", cx: FX - 9, kind: 'line',
+    { name: "Product Team", cx: FX - 9, kind: 'line',
       pts: [[0, 0], [0, 2], [0, 4], [0, 6], [0, 8], [0, 10], [0, 12]],
       links: [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6]] },
-    { name: "data team", cx: FX, kind: 'branch',
+    { name: "Data Team", cx: FX, kind: 'branch',
       pts: [[0, 0], [0, 2.2], [-1.35, 4.6], [1.35, 4.6], [-1.35, 7], [1.35, 7], [0, 9.4], [0, 11.8]],
       links: [[0, 1], [1, 2], [1, 3], [2, 4], [3, 5], [4, 6], [5, 6], [6, 7]] },
-    { name: "platform team", cx: FX + 9, kind: 'loop',
+    { name: "Platform Team", cx: FX + 9, kind: 'loop',
       pts: [[-1.5, 0.6], [-1.5, 3.2], [-1.5, 5.8], [-1.5, 8.4], [0, 10.8], [1.5, 8.4], [1.5, 5.8], [1.5, 3.2]],
       links: [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 0]],
       gates: [2, 5] },
@@ -1687,7 +1687,7 @@ export function buildWorld(scene) {
       metaLines.add(ar);
       return ar;
     });
-    const lbl = makeLabel(def.name + "'s workflow", css(COLORS.life), 0.68);
+    const lbl = makeLabel(def.name + "'s Workflow", css(COLORS.life), 0.68);
     lbl.position.set(def.cx, DECK_TOP + 3.4, Z0 - 1.8);
     lbl.visible = false;
     metaLines.add(lbl);
@@ -1838,11 +1838,11 @@ export function buildWorld(scene) {
   intake.add(rbox(56, 11, 1.6, mat(0x1d242d, { rough: 0.6, metal: 0.35 }), 0, 5.5, -20, 0.3));
   intake.add(rbox(56.6, 0.5, 2.0, mat(COLORS.input, { glow: true, ei: 0.35, metal: 0.2 }), 0, 11.2, -20, 0.2));
   const chuteDefs = [
-    ['Business goals', 'IDE', 'rocket', ['ship loyalty v2', 'open a new market', 'OKR: activation +10%']],
-    ['Leadership direction', 'Portal', 'bridge', ['cut cycle time 30%', 'autonomy risk appetite', 'platform first']],
-    ['User feedback', 'Portal', 'house', ['NPS dipped to 31', 'checkout is confusing', 'feature request #482']],
-    ['Telemetry & incidents', 'Auto', 'robot', ['Sev-2: latency spike', 'error budget burning', 'drift alert: model v9']],
-    ['Market & regulation', 'Auto', 'rover', ['CPS 230 update', 'competitor ships AI', 'privacy act change']],
+    ['Business Goals', 'IDE', 'rocket', ['ship loyalty v2', 'open a new market', 'OKR: activation +10%']],
+    ['Leadership Direction', 'Portal', 'bridge', ['cut cycle time 30%', 'autonomy risk appetite', 'platform first']],
+    ['User Feedback', 'Portal', 'house', ['NPS dipped to 31', 'checkout is confusing', 'feature request #482']],
+    ['Telemetry & Incidents', 'Auto', 'robot', ['Sev-2: latency spike', 'error budget burning', 'drift alert: model v9']],
+    ['Market & Regulation', 'Auto', 'rover', ['CPS 230 update', 'competitor ships AI', 'privacy act change']],
   ];
   chuteDefs.forEach(([name], i) => {
     const x = -20 + i * 10;
@@ -2555,8 +2555,8 @@ export function buildWorld(scene) {
   const floorBots = [
     // the reviewer keeps clear of the line's nameplate (it spans x -7..7 on
     // the front rail) or it stands right in front of the text
-    ['specialist · reviewer', STATION_X(4) + 2.6, 2.8],
-    ['specialist · evaluator', STATION_X(6) - 2.6, 2.6],
+    ['Specialist · Reviewer', STATION_X(4) + 2.6, 2.8],
+    ['Specialist · Evaluator', STATION_X(6) - 2.6, 2.6],
   ];
   floorBots.forEach(([name, x, z], i) => {
     const bot = makeRobot(1);
@@ -2577,7 +2577,7 @@ export function buildWorld(scene) {
   const roamers = [];
   // roam lanes stay clear of the loop conveyor (z 4.4..6) and the outbound
   // transfer belt (z 10.4..13.6 east of x 1)
-  [['cloud agent', -12, 10, 2.2], ['cloud agent', 12, 8.2, 1.5]].forEach(([name, cx, cz, az], i) => {
+  [['Cloud Agent', -12, 10, 2.2], ['Cloud Agent', 12, 8.2, 1.5]].forEach(([name, cx, cz, az], i) => {
     const bot = makeRobot(0.85);
     bot.g.position.set(cx, 0.1, cz);
     robots.add(bot.g);
@@ -2680,7 +2680,7 @@ export function buildWorld(scene) {
     const jb = rbox(0.5, 0.5, 0.5, mat(COLORS.steelDark, { rough: 0.5, metal: 0.5 }), cd[1][0], cd[1][1], cd[1][2], 0.06);
     basementNet.add(jb);
   }
-  const netLabel = lab(makeLabel('the foundation network', css(0x9fd8ff), 0.95), [12]);
+  const netLabel = lab(makeLabel('The Foundation Network', css(0x9fd8ff), 0.95), [12]);
   netLabel.position.set(0, UNDER_Y + 8.6, -2);
   basementNet.add(netLabel);
 
@@ -2705,14 +2705,14 @@ export function buildWorld(scene) {
   pulsesAlong(machineRoom, mrWire.userData.curve, COLORS.agent, 1, 0.2, 0.11);
   flangesAlong(machineRoom, mrWire.userData.curve, 0.12, 2);
   // nameplate leaning on top of the server rack row
-  const mrPlate = makePlate('Agent runtime', COLORS.agent, 3.4, 0.72);
+  const mrPlate = makePlate('Agent Runtime', COLORS.agent, 3.4, 0.72);
   mrPlate.position.set(24.9, UNDER_Y + 3.05, 9.0);
   mrPlate.rotation.x = -0.5;
   machineRoom.add(mrPlate);
 
   // ---- toolkits (screen 13), tapped into the network ----
   const toolkits = reg('toolkits', 13);
-  const tkNames = ['Skills', 'Playbooks', 'Agent instructions'];
+  const tkNames = ['Skills', 'Playbooks', 'Agent Instructions'];
   [-9, 0, 9].forEach((x, ti) => {
     const g = new THREE.Group();
     g.add(rbox(4.8, 3.8, 0.7, mat(COLORS.steelDark, { rough: 0.5, metal: 0.5 }), 0, 1.9, 0, 0.12));
@@ -2737,10 +2737,10 @@ export function buildWorld(scene) {
   // ---- the Pattern Shop (screen 14): master patterns + a stamping press ----
   const patternShop = reg('patternShop', 14);
   const patternDefs = [
-    ['Code templates', () => rbox(1.0, 1.0, 1.0, mat(COLORS.std, { glow: true, ei: 0.7, rough: 0.35 }), 0, 0, 0, 0.1)],
-    ['Deploy templates', () => cyl(0.6, 0.6, 1.1, mat(COLORS.std, { glow: true, ei: 0.7, rough: 0.35 }), 0, 0, 0, 14)],
-    ['Architecture patterns', () => { const t2 = torus(0.55, 0.2, mat(COLORS.std, { glow: true, ei: 0.7, rough: 0.35 }), 0, 0, 0); return t2; }],
-    ['Evaluation criteria', () => { const o = new THREE.Mesh(new THREE.OctahedronGeometry(0.72), mat(COLORS.std, { glow: true, ei: 0.7, rough: 0.35 })); return shadowed(o); }],
+    ['Code Templates', () => rbox(1.0, 1.0, 1.0, mat(COLORS.std, { glow: true, ei: 0.7, rough: 0.35 }), 0, 0, 0, 0.1)],
+    ['Deploy Templates', () => cyl(0.6, 0.6, 1.1, mat(COLORS.std, { glow: true, ei: 0.7, rough: 0.35 }), 0, 0, 0, 14)],
+    ['Architecture Patterns', () => { const t2 = torus(0.55, 0.2, mat(COLORS.std, { glow: true, ei: 0.7, rough: 0.35 }), 0, 0, 0); return t2; }],
+    ['Evaluation Criteria', () => { const o = new THREE.Mesh(new THREE.OctahedronGeometry(0.72), mat(COLORS.std, { glow: true, ei: 0.7, rough: 0.35 })); return shadowed(o); }],
   ];
   patternDefs.forEach(([n, make], i) => {
     const x = -12 + i * 5;
@@ -2767,7 +2767,7 @@ export function buildWorld(scene) {
     press.add(rbox(0.35, 3.4, 0.35, mat(COLORS.steel, { rough: 0.45, metal: 0.65 }), dx, 2.0, 0, 0.06));
   }
   press.add(rbox(3.4, 0.5, 1.2, mat(COLORS.steel, { rough: 0.45, metal: 0.65 }), 0, 3.6, 0, 0.08));
-  const pressPlate = makePlate('the Pattern Shop', COLORS.std, 3.2, 0.7);
+  const pressPlate = makePlate('The Pattern Shop', COLORS.std, 3.2, 0.7);
   pressPlate.position.set(0, 3.6, 0.65);
   press.add(pressPlate);
   const ram = rbox(1.5, 0.9, 1.0, mat(COLORS.steelLight, { rough: 0.4, metal: 0.7 }), 0, 2.4, 0, 0.08);
@@ -2796,7 +2796,7 @@ export function buildWorld(scene) {
   });
   // the press wears the shop name on screen 14 (the master labels stay
   // floating: their placards read small from the show camera)
-  const psLabel = lab(makeLabel('the Pattern Shop · Standards & Patterns', css(COLORS.std), 1.0), [], { band: true, group: 'patternShop' });
+  const psLabel = lab(makeLabel('The Pattern Shop · Standards & Patterns', css(COLORS.std), 1.0), [], { band: true, group: 'patternShop' });
   psLabel.position.set(0, UNDER_Y + 6.4, 12);
   patternShop.add(psLabel);
 
@@ -2906,7 +2906,7 @@ export function buildWorld(scene) {
   const whCurb = makePlate('Knowledge Layer', COLORS.know, 10, 0.62);
   whCurb.position.set(-60, GROUND_Y + 0.35, 7.03);
   warehouse.add(whCurb);
-  const shelfNames = ['Code & architecture', 'Internal knowledge', 'Process & standards', 'External docs'];
+  const shelfNames = ['Code & Architecture', 'Internal Knowledge', 'Process & Standards', 'External Docs'];
   const WH_Y = GROUND_Y + 0.7 + 1.7; // shelf base rests on the slab top
   shelfNames.forEach((n, s) => {
     const x = -72 + s * 9;
@@ -3075,7 +3075,7 @@ export function buildWorld(scene) {
   const mLabel = lab(makeLabel('Catalog Marketplace', css(COLORS.dist), 1.1), [17], { band: true, group: 'market' });
   mLabel.position.set(MX, GROUND_Y + 27, MZ);
   market.add(mLabel);
-  const mSub = lab(makeLabel('skills · MCPs · templates · workflow blocks', css(COLORS.dist), 0.75), [17]);
+  const mSub = lab(makeLabel('Skills · MCPs · Templates · Workflow Blocks', css(COLORS.dist), 0.75), [17]);
   mSub.position.set(MX, GROUND_Y + 24.6, MZ);
   market.add(mSub);
 
@@ -3103,7 +3103,7 @@ export function buildWorld(scene) {
   inet.add(inetRing);
   inet.position.set(-70, 24, -125);
   market.add(inet);
-  const inetLbl = lab(makeLabel('the internet · open source & vendors', css(COLORS.know), 1.0), [17]);
+  const inetLbl = lab(makeLabel('The Internet · open source & vendors', css(COLORS.know), 1.0), [17]);
   inetLbl.position.set(-70, 32, -125);
   market.add(inetLbl);
   animators.push({
@@ -3116,11 +3116,11 @@ export function buildWorld(scene) {
   // it. They land on the black box's rooftop port.
   const MPAD = new THREE.Vector3(MX + 9, GROUND_Y + 19.3, MZ + 5);
   const droneRoutes = [
-    { cargo: 'proven template · to another plant', from: MPAD, to: new THREE.Vector3(-115, -4, -75), color: COLORS.dist },
-    { cargo: 'workflow shape · to another plant', from: MPAD, to: new THREE.Vector3(95, -4, 70), color: COLORS.dist },
-    { cargo: 'community skill · import', from: new THREE.Vector3(125, -4, -60), to: MPAD, color: COLORS.cap },
-    { cargo: 'vendor MCP · import', from: new THREE.Vector3(-70, 24, -125), to: MPAD, color: COLORS.know },
-    { cargo: 'to our catalog', from: MPAD, to: new THREE.Vector3(OX, 20, OZ), color: COLORS.life },
+    { cargo: 'Proven Template · to another plant', from: MPAD, to: new THREE.Vector3(-115, -4, -75), color: COLORS.dist },
+    { cargo: 'Workflow Shape · to another plant', from: MPAD, to: new THREE.Vector3(95, -4, 70), color: COLORS.dist },
+    { cargo: 'Community Skill · import', from: new THREE.Vector3(125, -4, -60), to: MPAD, color: COLORS.cap },
+    { cargo: 'Vendor MCP · import', from: new THREE.Vector3(-70, 24, -125), to: MPAD, color: COLORS.know },
+    { cargo: 'To Our Catalog', from: MPAD, to: new THREE.Vector3(OX, 20, OZ), color: COLORS.life },
   ];
   const drones = [];
   droneRoutes.forEach((route, i) => {
@@ -3304,7 +3304,7 @@ export function buildWorld(scene) {
     govAudit.add(led);
     ledgerLeds.push(led);
   }
-  const audPlate = makePlate('Audit ledger', COLORS.gov, 3.4, 0.8);
+  const audPlate = makePlate('Audit Ledger', COLORS.gov, 3.4, 0.8);
   audPlate.position.set(AUD.x, 5.5, AUD.z + 1.62);
   govAudit.add(audPlate);
   animators.push({
@@ -3350,11 +3350,11 @@ export function buildWorld(scene) {
   const govTags = reg('govTags', 19);
   const GOVX = [
     { set: ['govAccess', 'govPipes', 'govTags', 'bays', 'bayIDE', 'bayPortal', 'bayAuto', 'intake', 'pipes', 'pipeContext', 'pipeAction', 'pipeObserve'],
-      tag: 'Access control · badge in at every entrance', pos: [0, 11.5, -14] },
+      tag: 'Access Control · badge in at every entrance', pos: [0, 11.5, -14] },
     { set: ['govGates', 'govTags', 'line', 'beltLine', 'journeys'],
-      tag: 'Quality gates · a check between every station', pos: [10, 7, 0] },
+      tag: 'Quality Gates · a check between every station', pos: [10, 7, 0] },
     { set: ['govDecision', 'govTags', 'line'],
-      tag: 'Decision rules · where a human signs off', pos: [5.5, 9.5, -5] },
+      tag: 'Decision Rules · where a human signs off', pos: [5.5, 9.5, -5] },
     { set: ['govAudit', 'govAccess', 'govGates', 'govDecision', 'govPipes', 'govTags'],
       tag: 'Audit · every action recorded, replayable', pos: [23, 10.0, -9] },
   ];
@@ -3366,7 +3366,7 @@ export function buildWorld(scene) {
     return s;
   });
   world.setGovFocus = sub => setFocusSet('gov', GOVX, govTagSprites, sub);
-  const govLabel = lab(makeLabel('Governance · access · gates · decisions · audit', css(COLORS.gov), 1.1), [], { band: true, group: 'governance' });
+  const govLabel = lab(makeLabel('Governance · Access · Gates · Decisions · Audit', css(COLORS.gov), 1.1), [], { band: true, group: 'governance' });
   govLabel.position.set(0, 13.6, 0);
   governance.add(govLabel);
 
@@ -3405,7 +3405,7 @@ export function buildWorld(scene) {
   const hubSign = makePlate('Measurement Hub', COLORS.meas, 6.4, 1.2);
   hubSign.position.set(0, 8.95, 0.24);
   dash.add(hubSign);
-  ['adoption', 'impact', 'outcomes', 'demand'].forEach((mname, i) => {
+  ['Adoption', 'Impact', 'Outcomes', 'Demand'].forEach((mname, i) => {
     const cap = makePlate(mname, COLORS.meas, 1.9, 0.52);
     cap.position.set(-3.15 + i * 2.1, 5.15, 0.28);
     dash.add(cap);
@@ -3461,7 +3461,7 @@ export function buildWorld(scene) {
     measurement.add(fp);
     feedPulses.push({ mesh: fp, ph: i / 3 });
   }
-  const feedLbl = lab(makeLabel('signals feed the intake · the loop closes', css(COLORS.meas), 0.9), [20], { band: true, group: 'measurement' });
+  const feedLbl = lab(makeLabel('Signals feed the intake · the loop closes', css(COLORS.meas), 0.9), [20], { band: true, group: 'measurement' });
   feedLbl.position.set(-10, 17.5, -22);
   measurement.add(feedLbl);
   animators.push({
@@ -3498,20 +3498,20 @@ export function buildWorld(scene) {
   }
   beacon(dock, COLORS.outcome, 0, 6.2, 15.6, 2.4);
   // the window wears its name on the header
-  const dockPlate = makePlate('Outcome dock', COLORS.outcome, 5, 1.0);
+  const dockPlate = makePlate('Outcome Dock', COLORS.outcome, 5, 1.0);
   dockPlate.position.set(0, 5.1, 16.4);
   dock.add(dockPlate);
-  const dockLabel = lab(makeLabel('Outcome dock', css(COLORS.outcome), 0.95), [], { band: true, group: 'dock' });
+  const dockLabel = lab(makeLabel('Outcome Dock', css(COLORS.outcome), 0.95), [], { band: true, group: 'dock' });
   dockLabel.position.set(0, 7.6, 15.6);
   dock.add(dockLabel);
 
   // ---- screen 18: the infrastructure IS the structure (x-ray) ----
   const infraTags = reg('infraTags', 18);
   const XRAY = [
-    { set: ['shell', 'campus', 'pave', 'infraTags'], tag: 'Compute & hosting · the slab and columns', pos: [0, 15, -2] },
-    { set: ['beltLine', 'loopBelt', 'dock', 'infraTags'], tag: 'CI/CD pipelines · the belts themselves', pos: [0, 6.5, 8] },
-    { set: ['machineRoom', 'infraTags'], tag: 'Agent runtime · the machine room', pos: [22, -3, 9] },
-    { set: ['basementNet', 'infraTags'], tag: 'Data pipeline · the wires and trunks', pos: [0, -2.5, -2] },
+    { set: ['shell', 'campus', 'pave', 'infraTags'], tag: 'Compute & Hosting · the slab and columns', pos: [0, 15, -2] },
+    { set: ['beltLine', 'loopBelt', 'dock', 'infraTags'], tag: 'CI/CD Pipelines · the belts themselves', pos: [0, 6.5, 8] },
+    { set: ['machineRoom', 'infraTags'], tag: 'Agent Runtime · the machine room', pos: [22, -3, 9] },
+    { set: ['basementNet', 'infraTags'], tag: 'Data Pipeline · the wires and trunks', pos: [0, -2.5, -2] },
   ];
   const xrayTags = XRAY.map(x2 => {
     const s = makeLabel(x2.tag, css(COLORS.infra), 1.0);
