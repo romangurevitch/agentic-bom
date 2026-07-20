@@ -22,7 +22,7 @@ export const STEPS = [
     title: 'We are going to build a factory',
     qr: { img: 'assets/qr.svg', title: 'Scan for the repo & deck', url: 'github.com/romangurevitch/agentic-bom' },
     bullets: [
-      'A Bill of Materials for the agentic SDLC, assembled live',
+      'A Bill of Materials for agentic engineering, assembled live',
       'You leave with a parts list to hold your own org against',
     ],
     notes: [
@@ -51,7 +51,7 @@ export const STEPS = [
     title: 'A Bill of Materials',
     bullets: [
       'Manufacturing solved this a century ago. Every part named, composed, load-bearing.',
-      'A Bill of Materials for the agentic SDLC. This sheet is the outline; the full schema is bigger than a slide.',
+      'A Bill of Materials for agentic engineering. This sheet is the outline; the full schema is bigger than a slide.',
       'Every component keeps its color for the whole talk, in the labels, the dots, the full plant',
       'The rest of the talk assembles the real picture, piece by piece',
     ],
@@ -100,7 +100,7 @@ export const STEPS = [
       'IDE: an engineer and their agent, terminal and editor',
       'Portal: everyone else, through a browser',
       'Autonomous: nobody. The incident routes straight to an agent.',
-      'If only engineers have a way in, you automated a team, not an SDLC',
+      'If only engineers have a way in, you automated a team, not how your org delivers',
     ],
     notes: [
       'Most agent setups only have a door for engineers, which quietly limits adoption to one team.',
@@ -145,7 +145,7 @@ export const STEPS = [
     cam: { pos: [10, 34, 1], target: [7, 13.5, -27] },
   },
   {
-    act: 2, accent: C.sdlc, kicker: 'Self-Continuous SDLC',
+    act: 2, accent: C.sdlc, kicker: 'Self-Continuous Agentic Engineering',
     title: 'The line, built from the chosen workflow',
     bullets: [
       'Define · Design · Build · Verify · Release · Operate · Measure',
@@ -386,7 +386,7 @@ export const STEPS = [
     title: 'Build your own factory',
     qr: { img: 'assets/qr-linkedin.svg', title: 'Connect on LinkedIn', url: 'linkedin.com/in/roman-gurevitch-781220aa' },
     bullets: [
-      'Adopting tools is not building a factory. The factory is your SDLC, rebuilt around agents.',
+      'Adopting tools is not building a factory. The factory is how your org delivers software, rebuilt around agents.',
       'Take the parts list home and hold your org against it: every component gets a deliberate depth, even if that depth is "one file"',
       'Compose your Meta Workflow on purpose: assembled, versioned, owned, never an accident',
       'Roman Gurevitch · Principal Software Engineer · Mantel',

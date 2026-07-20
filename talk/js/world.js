@@ -717,7 +717,7 @@ function sheetTexture() {
   x.textAlign = 'left';
   leader(ex0 + 240, gy - 555, ex0 + 330, gy - 462, '01 CONTINUOUS INPUTS');
   leader(ex0 + 890, gy - 500, ex0 + 700, gy - 430, '02 EXPERIENCE CELLS');
-  leader(ex0 + 910, gy - 350, ex0 + 830, gy - 260, '04 SDLC STATION ROOMS');
+  leader(ex0 + 910, gy - 350, ex0 + 830, gy - 260, '04 STATION ROOMS');
   leader(ex0 + 1000, gy - 115, ex0 + 900, gy - 162, '05 AGENT WORKFORCE');
   leader(ex0 + 500, gy - 60, ex0 + 420, gy - 75, '06-09 FOUNDATION LEVEL B1');
   leader(ex1 + 60, gy - 385, ex1 + 10, gy - 330, '10 DOCK');
@@ -775,7 +775,7 @@ function sheetTexture() {
   line(tbx, tby + 54, tbx + 640, tby + 54, 2);
   line(tbx, tby + 106, tbx + 640, tby + 106, 2);
   line(tbx + 420, tby + 54, tbx + 420, tby + 160, 2);
-  fitText('THE AGENTIC SDLC · BILL OF MATERIALS', tbx + 16, tby + 38, 608, 700, 28, '#e6edf3');
+  fitText('AGENTIC ENGINEERING · BILL OF MATERIALS', tbx + 16, tby + 38, 608, 700, 28, '#e6edf3');
   fitText('mock structural plan · every part named', tbx + 16, tby + 90, 388, 500, 22);
   fitText('11 components · 2 systems · 1 loop', tbx + 16, tby + 142, 388, 500, 22);
   fitText('SHEET A-101 · 1:100', tbx + 436, tby + 90, 188, 500, 22);
@@ -2093,11 +2093,11 @@ export function buildWorld(scene) {
   // more upright than it used to be so it still reads at eye level in free
   // roam. The far orbit screens get a floating band label instead: from up
   // there any rail plate turns edge-on.
-  const linePlate = makePlate('Self-Continuous SDLC', COLORS.sdlc, 14, 1.3);
+  const linePlate = makePlate('Self-Continuous Agentic Engineering', COLORS.sdlc, 16, 1.3);
   linePlate.position.set(0, 1.25, 2.05);
   linePlate.rotation.x = -0.35;
   line.add(linePlate);
-  const lineBand = lab(makeLabel('Self-Continuous SDLC · the line', css(COLORS.sdlc), 1.1), [], { band: true, group: 'line' });
+  const lineBand = lab(makeLabel('Self-Continuous Agentic Engineering · the line', css(COLORS.sdlc), 1.1), [], { band: true, group: 'line' });
   lineBand.position.set(0, 8, 0);
   line.add(lineBand);
   // who occupies each room, per profile: P person, A agent, . empty

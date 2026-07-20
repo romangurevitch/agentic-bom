@@ -23,7 +23,7 @@ speaker-notes strip (`N` key), step-synced.
 ### 3. The Idea: a Bill of Materials
 - Manufacturing solved this a century ago with the Bill of Materials. Every
   part named, how parts compose, what is load-bearing.
-- Here is the outline of a Bill of Materials for the agentic SDLC. The full
+- Here is the outline of a Bill of Materials for agentic engineering. The full
   schema is bigger than a slide; this sheet carries the shape of it. You
   cannot hold your org against a list you have never seen.
 - Every component keeps one color for the rest of the talk. The labels, the
@@ -64,7 +64,8 @@ speaker-notes strip (`N` key), step-synced.
   browser.
 - Autonomous: nobody. An incident arrives and an agent picks it up. Agent to
   agent.
-- If only engineers have a way in, you automated a team, not an SDLC.
+- If only engineers have a way in, you automated a team, not how your org
+  delivers.
 
 ### 7. Inside the Head Office
 - Up to the top level, into the Head Office. The catalog just arrived on the
@@ -262,8 +263,8 @@ speaker-notes strip (`N` key), step-synced.
 ### 23. Close (Build Your Own Factory)
 - We opened on an empty lot and said we would build a factory. We did. Yours
   is next.
-- Adopting tools is not building a factory. The factory is your SDLC itself,
-  rebuilt around agents.
+- Adopting tools is not building a factory. The factory is how your org
+  delivers software, rebuilt around agents.
 - Take the parts list home. Hold your org against it. Give every component a
   deliberate depth, even if the decision is one file.
 - And compose your Meta Workflow on purpose. Decide how your teams’ workflows

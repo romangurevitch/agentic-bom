@@ -10,8 +10,8 @@ software factory assembles itself live across 23 keyboard-driven screens
 (six acts), ending in a full-plant orbit and a "choose your build" depth
 selector (startup / scale-up / regulated enterprise).
 
-The talk uses a factory as a metaphor for a target agentic software
-development lifecycle: inputs arrive at intake funnels, flow through
+The talk uses a factory as a metaphor for a target agentic
+engineering setup: inputs arrive at intake funnels, flow through
 experience cells and a workflow foundry, are shaped station by station on a
 factory floor, and ship as finished, recognizable products. Underneath the
 floor runs one connected service network (patterns, capability, knowledge,

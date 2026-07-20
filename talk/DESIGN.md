@@ -58,7 +58,7 @@ palette.
 | Experience Layer         | Three cells: IDE desk (engineer in t-shirt + agent, Claude-style icon on screen), Portal kiosk (suit, browser chrome on screen), Autonomous dock (robot only, no label needed) |
 | Lifecycle Config         | The Head Office: the business creates the factory; catalog covers the east wall inside |
 | The Meta Workflow        | The Workflow Foundry beside the office: candidate topologies assemble in place; the chosen one flies to the factory floor |
-| Self-Continuous SDLC     | The line: seven glass-fronted station rooms behind the belt, nameplates on the rooms, products gain a part at each window |
+| Self-Continuous Agentic Engineering | The line: seven glass-fronted station rooms behind the belt, nameplates on the rooms, products gain a part at each window |
 | Agent Layer              | The occupants: people-only, agent-only, and mixed rooms, plus cloud agents and specialists on the floor |
 | Capability Layer         | Toolkit racks below the floor, tapped into the network        |
 | Standards & Patterns     | The Pattern Shop: master patterns on stands + a stamping press |
