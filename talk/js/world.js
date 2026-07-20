@@ -1394,6 +1394,7 @@ export function buildWorld(scene) {
     ['A Prompt Library', -4, 12],
     ['An MCP Server', 9, 4],
     ['A Pilot', -3, -4],
+    ['A Skills Folder', 15, -7],
   ];
   const rigTiles = [];
   rigDefs.forEach(([name, hx, hz], i) => {

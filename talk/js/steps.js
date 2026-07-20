@@ -37,12 +37,12 @@ export const STEPS = [
     title: 'Easy to start, hard to hold together',
     bullets: [
       'Everyone is adopting, and a coding agent takes an afternoon to set up',
-      'Models, tools, patterns change faster than plans can',
-      'The hard part is common ways of working, reusable components, and evolving them over time',
+      'Models, tools, skills, patterns change faster than plans can',
+      'The hard part is common ways of working, reusable skills and components, and evolving them over time',
     ],
     notes: [
-      'Getting started is quick; a coding agent takes an afternoon. The ground keeps moving though: models, tools and patterns change month to month.',
-      'The harder question is how dozens of individually sensible quick starts become shared ways of working and reusable components, and who evolves them as things shift.',
+      'Getting started is quick; a coding agent takes an afternoon. The ground keeps moving though: models, tools, skills and patterns change month to month.',
+      'The harder question is how dozens of individually sensible quick starts become shared ways of working, reusable skills and components, and who evolves them as things shift.',
     ],
     cam: { pos: [16, -3, 22], target: [0, -10, -2] },
   },

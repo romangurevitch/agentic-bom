@@ -15,10 +15,10 @@ speaker-notes strip (`N` key), step-synced.
 - Everyone in this room is adopting agentic engineering, or trying to.
 - Starting is the easy part; a coding agent takes an afternoon. Watch the
   ground under each quick start. It never stops moving.
-- Models, tools, and patterns change month to month. Hard to plan against,
-  hard to standardize on.
+- Models, tools, skills, and patterns change month to month. Hard to plan
+  against, hard to standardize on.
 - So the hard part is not starting. It is common ways of working, reusable
-  components, and evolving them as everything shifts.
+  skills and components, and evolving them as everything shifts.
 
 ### 3. The Idea: a Bill of Materials
 - Manufacturing solved this a century ago with the Bill of Materials. Every
